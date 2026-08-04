@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/collect-market-data",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/update-weekly-prices",
+      "schedule": "0 0 * * 1"
+    }
+  ]
+}

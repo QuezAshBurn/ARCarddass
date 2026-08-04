@@ -27,7 +27,7 @@ export default async function HomePage() {
             <h1>Relive the pull. Track the market.</h1>
             <p>
               Track the rarest AR Carddass Formation cards with transparent PHP
-              pricing, market evidence, demand, scarcity, and weekly movement.
+              pricing, market evidence, demand, scarcity, and daily movement.
             </p>
             <div className="hero__actions">
               <Link className="button primary" href="/pull">
@@ -50,7 +50,7 @@ export default async function HomePage() {
           <div className="stat-card">
             <span>Highest market price</span>
             <strong>{formatPeso(highestVersion.currentPublishedPricePhp)}</strong>
-            <p>{highest.characterName} · {highest.cardNumber}</p>
+            <p>{highest.characterName} Â· {highest.cardNumber}</p>
           </div>
           <div className="stat-card">
             <span>Biggest weekly mover</span>
@@ -96,7 +96,7 @@ export default async function HomePage() {
             <h2>{summary.mostDemanded[0].card.characterName} leads demand.</h2>
             <p>
               Demand and scarcity are surfaced as collector signals, not hidden
-              spreadsheet magic. Users can move from price to weekly movement to
+              spreadsheet magic. Users can move from price to daily movement to
               KPI calculation to evidence.
             </p>
           </div>
@@ -104,7 +104,7 @@ export default async function HomePage() {
             <span className="label">Trust model</span>
             <h2>Exciting first, inspectable always.</h2>
             <p>
-              Initial references lock once. Weekly updates start from the current
+              Initial references lock once. Market updates start from the current
               published price. Admin adjustments preserve the system result and
               disclose the adjustment publicly.
             </p>

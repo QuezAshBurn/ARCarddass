@@ -8,9 +8,9 @@ const kpis = [
 ];
 
 const caps = [
-  ["No verified sale", "±1.5%"],
-  ["One independent verified sale", "±7.5%"],
-  ["Multiple independent verified sales", "±12%"],
+  ["No verified sale", "Â±1.5%"],
+  ["One independent verified sale", "Â±7.5%"],
+  ["Multiple independent verified sales", "Â±12%"],
   ["Major outlier or record event", "Hold for review"]
 ];
 
@@ -39,14 +39,14 @@ export default function MethodologyPage() {
           <pre className="formula">{`Initial Reference Price = max(A, B, C, D)`}</pre>
         </div>
         <div className="content-card">
-          <span className="label">Recurring weekly price</span>
+          <span className="label">Recurring market price</span>
           <h2>Market movement</h2>
           <p>
-            Weekly pricing starts from the current published price. Fresh KPI
+            Market pricing starts from the current published price. Fresh KPI
             events are processed once, capped by transaction depth, and stored as
             immutable snapshots.
           </p>
-          <pre className="formula">{`Calculated Price = Current Published Price × (1 + KPI Movement %)`}</pre>
+          <pre className="formula">{`Calculated Price = Current Published Price Ã— (1 + KPI Movement %)`}</pre>
         </div>
       </div>
 

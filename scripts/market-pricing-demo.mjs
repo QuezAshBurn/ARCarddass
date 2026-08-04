@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 
 const kpiWeights = {
   transaction: 0.35,
@@ -159,7 +159,7 @@ function calculateWeeklyMarketPrice(input) {
 }
 
 function printHelp() {
-  console.log(`Weekly pricing demo\n\nUsage:\n  npm run pricing:weekly -- --card Boa --price 160000 --sales 1 --transaction 65 --buyerIntent 60 --searchDemand 55 --scarcity 80 --momentum 62 --breadth 40\n\nRequired:\n  --price <php>       Current Published Price, used as the weekly base\n\nUseful options:\n  --card <name>       Label only\n  --sales <count>     Verified sale count this period; default 0\n  --transaction <0-100>\n  --buyerIntent <0-100>\n  --searchDemand <0-100>\n  --scarcity <0-100>\n  --momentum <0-100>\n  --breadth <0-100>\n  --no-evidence       Preserve current price\n  --outlier           Hold for manual review\n`);
+  console.log(`Market pricing demo\n\nUsage:\n  npm run pricing:update -- --card Boa --price 160000 --sales 1 --transaction 65 --buyerIntent 60 --searchDemand 55 --scarcity 80 --momentum 62 --breadth 40\n\nRequired:\n  --price <php>       Current Published Price, used as the weekly base\n\nUseful options:\n  --card <name>       Label only\n  --sales <count>     Verified sale count this period; default 0\n  --transaction <0-100>\n  --buyerIntent <0-100>\n  --searchDemand <0-100>\n  --scarcity <0-100>\n  --momentum <0-100>\n  --breadth <0-100>\n  --no-evidence       Preserve current price\n  --outlier           Hold for manual review\n`);
 }
 
 try {
@@ -175,7 +175,7 @@ try {
     const result = calculateWeeklyMarketPrice(input);
     const difference = result.calculatedPricePhp - input.currentPublishedPricePhp;
 
-    console.log("Weekly Market Pricing Demo");
+    console.log("Market Price Update Demo");
     console.log("--------------------------");
     console.log(`Card: ${input.card ?? "Manual input"}`);
     console.log(`Base: ${peso(input.currentPublishedPricePhp)} Current Published Price`);

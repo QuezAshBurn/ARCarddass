@@ -1,7 +1,7 @@
 const adminSections = [
   "Evidence awaiting review",
   "Anomaly queue",
-  "Weekly calculation preview",
+  "Market calculation preview",
   "Active overrides",
   "Frozen card versions",
   "Source health",

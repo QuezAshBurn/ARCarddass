@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 
 const cards = [
   { cardNumber: "F01-01", characterName: "Luffy", price: 194000, weeklyChangePercent: 1.8, demandScore: 72, scarcityScore: 75, directEvidence: 4, modeledEvidence: 0 },
@@ -79,7 +79,7 @@ function calculate(card) {
 
 const updates = cards.map(calculate);
 
-console.log("Weekly Updates For All Cards");
+console.log("Twice-Daily Market Updates For All Cards");
 console.log("----------------------------");
 for (const update of updates) {
   console.log(
@@ -87,4 +87,4 @@ for (const update of updates) {
   );
 }
 
-console.log("\nEvery seeded card was processed. In production, these results should be saved as weekly price snapshots in Supabase.");
+console.log("\nEvery seeded card was processed. In production, these results should be saved as market price snapshots in Supabase.");

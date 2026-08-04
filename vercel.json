@@ -5,8 +5,8 @@
       "schedule": "0 1 * * *"
     },
     {
-      "path": "/api/cron/update-weekly-prices",
-      "schedule": "0 23 * * 6"
+      "path": "/api/cron/update-market-prices",
+      "schedule": "0 4,16 * * *"
     }
   ]
 }

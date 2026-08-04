@@ -12,7 +12,7 @@ export function GET() {
   return NextResponse.json({
     methodologyVersion,
     principle:
-      "Initial pricing runs once; weekly pricing starts from current published price and only fresh KPI evidence.",
+      "Initial pricing runs once; market pricing starts from current published price and only fresh KPI evidence.",
     gradeMultipliers,
     conditionNmMultipliers,
     versionRelationships,

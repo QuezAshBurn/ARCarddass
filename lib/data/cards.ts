@@ -45,7 +45,7 @@ export type EvidenceRecord = {
   date: string;
   classification: string;
   confidence: number;
-  affected: "initialization" | "weekly-kpi" | "informational" | "held-review";
+  affected: "initialization" | "market-kpi" | "informational" | "held-review";
   sourceUrl: string;
   watchers?: number;
   bids?: number;
@@ -120,7 +120,7 @@ function makeVersions(
       region: "International",
       verificationStatus: "modeled",
       pricingState: "LIVE",
-      versionRelationship: "EN = JP Ã— 0.90",
+      versionRelationship: "EN = JP Ãƒâ€” 0.90",
       currentPublishedPricePhp: en,
       initialReferencePricePhp: Math.round(en * 0.93),
       highWaterReferencePhp: Math.round(en * 1.08),
@@ -140,7 +140,7 @@ function makeVersions(
       region: "Greater China",
       verificationStatus: "modeled",
       pricingState: "LIVE",
-      versionRelationship: "CN = JP Ã— 0.85",
+      versionRelationship: "CN = JP Ãƒâ€” 0.85",
       currentPublishedPricePhp: cn,
       initialReferencePricePhp: Math.round(cn * 0.93),
       highWaterReferencePhp: Math.round(cn * 1.08),
@@ -345,7 +345,7 @@ export const evidenceRecords: EvidenceRecord[] = [
     date: "2026-07-29",
     classification: "Verified raw Near Mint completed sale",
     confidence: 91,
-    affected: "weekly-kpi",
+    affected: "market-kpi",
     sourceUrl: "#",
     watchers: 18,
     bids: 7
@@ -382,7 +382,7 @@ export const evidenceRecords: EvidenceRecord[] = [
     date: "2026-07-31",
     classification: "English version direct sale",
     confidence: 88,
-    affected: "weekly-kpi",
+    affected: "market-kpi",
     sourceUrl: "#",
     bids: 4
   },

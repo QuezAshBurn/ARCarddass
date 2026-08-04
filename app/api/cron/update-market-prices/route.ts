@@ -1,7 +1,7 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { cards as staticCards } from "@/lib/data/cards";
 import { getServiceSupabaseClient } from "@/lib/database/supabase";
-import { calculateWeeklyUpdateForVersion } from "@/lib/domain/weekly-updates";
+import { calculateMarketUpdateForVersion } from "@/lib/domain/market-updates";
 import { requireCronSecret } from "@/lib/http/cron";
 import { methodologyVersion } from "@/config/pricing-rules";
 
@@ -10,18 +10,23 @@ type DbVersionRow = {
   version_code: string;
   pricing_state: string;
   current_published_price_php: number | string | null;
-  cards: { card_number: string; character_name: string } | { card_number: string; character_name: string }[] | null;
+  cards:
+    | { card_number: string; character_name: string }
+    | { card_number: string; character_name: string }[]
+    | null;
 };
 
-function getIsoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
+function getIsoTimestamp(date: Date): string {
+  return date.toISOString();
 }
 
 function getRunKey(now: Date): string {
-  const yearStart = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
-  const week = Math.ceil((Number(now) - Number(yearStart)) / (7 * 24 * 60 * 60 * 1000));
+  const yyyy = now.getUTCFullYear();
+  const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(now.getUTCDate()).padStart(2, "0");
+  const hh = String(now.getUTCHours()).padStart(2, "0");
 
-  return `WEEKLY_PRICE_UPDATE:${now.getUTCFullYear()}-W${week.toString().padStart(2, "0")}`;
+  return `MARKET_PRICE_UPDATE:${yyyy}-${mm}-${dd}T${hh}:00Z`;
 }
 
 function getCardNumber(row: DbVersionRow): string | undefined {
@@ -49,21 +54,21 @@ export async function GET(request: Request) {
 
   const now = new Date();
   const runKey = getRunKey(now);
-  const pricingPeriodEnd = getIsoDate(now);
-  const pricingPeriodStart = getIsoDate(new Date(Number(now) - 7 * 24 * 60 * 60 * 1000));
+  const pricingPeriodEnd = getIsoTimestamp(now);
+  const pricingPeriodStart = getIsoTimestamp(new Date(Number(now) - 12 * 60 * 60 * 1000));
   const supabase = getServiceSupabaseClient();
 
   if (!supabase) {
     const updates = staticCards.flatMap((card) =>
       card.versions
         .filter((version) => version.pricingState === "LIVE")
-        .map((version) => calculateWeeklyUpdateForVersion(card, version))
+        .map((version) => calculateMarketUpdateForVersion(card, version))
     );
 
     return NextResponse.json({
-      jobType: "WEEKLY_PRICE_UPDATE",
+      jobType: "MARKET_PRICE_UPDATE",
       status: "CALCULATED_STATIC_PREVIEW",
-      schedule: "0 23 * * 6 UTC = Sunday 07:00 Asia/Manila",
+      schedule: "0 4,16 * * * UTC = 12:00 and 00:00 Asia/Manila daily",
       runKey,
       processedVersionCount: updates.length,
       note:
@@ -75,7 +80,7 @@ export async function GET(request: Request) {
   const { data: previousRun, error: previousRunError } = await supabase
     .from("job_runs")
     .select("id,status,completed_at")
-    .eq("job_type", "WEEKLY_PRICE_UPDATE")
+    .eq("job_type", "MARKET_PRICE_UPDATE")
     .eq("run_key", runKey)
     .maybeSingle();
 
@@ -85,7 +90,7 @@ export async function GET(request: Request) {
 
   if (previousRun?.status === "COMPLETED") {
     return NextResponse.json({
-      jobType: "WEEKLY_PRICE_UPDATE",
+      jobType: "MARKET_PRICE_UPDATE",
       status: "ALREADY_COMPLETED",
       runKey,
       completedAt: previousRun.completed_at
@@ -94,7 +99,7 @@ export async function GET(request: Request) {
 
   await supabase.from("job_runs").upsert(
     {
-      job_type: "WEEKLY_PRICE_UPDATE",
+      job_type: "MARKET_PRICE_UPDATE",
       run_key: runKey,
       status: "RUNNING",
       started_at: now.toISOString(),
@@ -112,7 +117,7 @@ export async function GET(request: Request) {
     await supabase
       .from("job_runs")
       .update({ status: "FAILED", error_message: versionError?.message ?? "No LIVE versions found" })
-      .eq("job_type", "WEEKLY_PRICE_UPDATE")
+      .eq("job_type", "MARKET_PRICE_UPDATE")
       .eq("run_key", runKey);
 
     return NextResponse.json(
@@ -141,7 +146,7 @@ export async function GET(request: Request) {
         ? Math.round(currentPublishedPricePhp)
         : staticVersion.currentPublishedPricePhp
     };
-    const update = calculateWeeklyUpdateForVersion(staticCard, versionForCalculation);
+    const update = calculateMarketUpdateForVersion(staticCard, versionForCalculation);
 
     const { data: snapshot, error: snapshotError } = await supabase
       .from("price_snapshots")
@@ -173,7 +178,7 @@ export async function GET(request: Request) {
       await supabase
         .from("job_runs")
         .update({ status: "FAILED", error_message: snapshotError.message })
-        .eq("job_type", "WEEKLY_PRICE_UPDATE")
+        .eq("job_type", "MARKET_PRICE_UPDATE")
         .eq("run_key", runKey);
 
       return NextResponse.json({ error: snapshotError.message }, { status: 500 });
@@ -192,7 +197,7 @@ export async function GET(request: Request) {
       await supabase
         .from("job_runs")
         .update({ status: "FAILED", error_message: publishError.message })
-        .eq("job_type", "WEEKLY_PRICE_UPDATE")
+        .eq("job_type", "MARKET_PRICE_UPDATE")
         .eq("run_key", runKey);
 
       return NextResponse.json({ error: publishError.message }, { status: 500 });
@@ -214,13 +219,13 @@ export async function GET(request: Request) {
       processed_count: updates.length,
       rejected_count: Math.max(0, dbVersions.length - updates.length)
     })
-    .eq("job_type", "WEEKLY_PRICE_UPDATE")
+    .eq("job_type", "MARKET_PRICE_UPDATE")
     .eq("run_key", runKey);
 
   return NextResponse.json({
-    jobType: "WEEKLY_PRICE_UPDATE",
+    jobType: "MARKET_PRICE_UPDATE",
     status: "COMPLETED",
-    schedule: "0 23 * * 6 UTC = Sunday 07:00 Asia/Manila",
+    schedule: "0 4,16 * * * UTC = 12:00 and 00:00 Asia/Manila daily",
     runKey,
     pricingPeriodStart,
     pricingPeriodEnd,

@@ -8,8 +8,8 @@
                     "start":  "next start",
                     "test":  "vitest run",
                     "typecheck":  "tsc --noEmit",
-                    "pricing:weekly":  "node scripts/weekly-pricing-demo.mjs",
-                    "pricing:weekly:all":  "node scripts/weekly-pricing-all.mjs"
+                    "pricing:update":  "node scripts/market-pricing-demo.mjs",
+                    "pricing:update:all":  "node scripts/market-pricing-all.mjs"
                 },
     "dependencies":  {
                          "@supabase/supabase-js":  "^2.45.4",

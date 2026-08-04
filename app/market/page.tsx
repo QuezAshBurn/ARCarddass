@@ -1,4 +1,4 @@
-﻿import { MarketTable } from "@/components/MarketTable";
+import { MarketTable } from "@/components/MarketTable";
 import { getMarketSummary } from "@/lib/data/cards";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
@@ -11,7 +11,7 @@ export default async function MarketPage() {
   return (
     <section className="shell section">
       <span className="eyebrow">Market dashboard</span>
-      <h1>Weekly movement from current published prices.</h1>
+      <h1>Daily movement from current published prices.</h1>
       <p>
         This view ranks prices, demand, scarcity, and latest movement across all
         live premium launch cards.
@@ -30,7 +30,7 @@ export default async function MarketPage() {
         <div className="content-card">
           <span className="label">Softest movement</span>
           <h2>{summary.biggestDecliners[0].card.characterName}</h2>
-          <p>{summary.biggestDecliners[0].version.weeklyChangePercent.toFixed(2)}% this week.</p>
+          <p>{summary.biggestDecliners[0].version.weeklyChangePercent.toFixed(2)}% this update.</p>
         </div>
       </div>
       <div style={{ height: 22 }} />

@@ -1,4 +1,4 @@
-﻿import type { Card, CardVersion } from "@/lib/data/cards";
+import type { Card, CardVersion } from "@/lib/data/cards";
 import { getPrimaryVersion } from "@/lib/data/cards";
 import { calculateWeeklyMarketPrice } from "@/lib/domain/pricing";
 
@@ -6,7 +6,7 @@ function clampScore(score: number): number {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
-export function buildWeeklyInputForVersion(version: CardVersion) {
+export function buildMarketInputForVersion(version: CardVersion) {
   const verifiedSaleCount = version.directEvidence >= 4 ? 2 : version.directEvidence > 0 ? 1 : 0;
 
   return {
@@ -23,8 +23,8 @@ export function buildWeeklyInputForVersion(version: CardVersion) {
   };
 }
 
-export function calculateWeeklyUpdateForVersion(card: Card, version: CardVersion) {
-  const input = buildWeeklyInputForVersion(version);
+export function calculateMarketUpdateForVersion(card: Card, version: CardVersion) {
+  const input = buildMarketInputForVersion(version);
   const result = calculateWeeklyMarketPrice(input);
 
   return {
@@ -44,16 +44,16 @@ export function calculateWeeklyUpdateForVersion(card: Card, version: CardVersion
   };
 }
 
-export function calculateWeeklyUpdatesForPrimaryCards(cards: Card[]) {
+export function calculateMarketUpdatesForPrimaryCards(cards: Card[]) {
   return cards
     .filter((card) => card.pricingEnabled)
-    .map((card) => calculateWeeklyUpdateForVersion(card, getPrimaryVersion(card)));
+    .map((card) => calculateMarketUpdateForVersion(card, getPrimaryVersion(card)));
 }
 
-export function calculateWeeklyUpdatesForAllLiveVersions(cards: Card[]) {
+export function calculateMarketUpdatesForAllLiveVersions(cards: Card[]) {
   return cards.flatMap((card) =>
     card.versions
       .filter((version) => version.pricingState === "LIVE")
-      .map((version) => calculateWeeklyUpdateForVersion(card, version))
+      .map((version) => calculateMarketUpdateForVersion(card, version))
   );
 }

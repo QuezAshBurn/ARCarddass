@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { findCard } from "@/lib/data/cards";
+﻿import { NextResponse } from "next/server";
+import { getCardWithLivePrices } from "@/lib/data/live-cards";
 
 type RouteContext = {
   params: {
@@ -7,8 +7,10 @@ type RouteContext = {
   };
 };
 
-export function GET(_request: Request, { params }: RouteContext) {
-  const card = findCard(params.cardNumber);
+export const dynamic = "force-dynamic";
+
+export async function GET(_request: Request, { params }: RouteContext) {
+  const card = await getCardWithLivePrices(params.cardNumber);
 
   if (!card) {
     return NextResponse.json({ error: "Card not found." }, { status: 404 });

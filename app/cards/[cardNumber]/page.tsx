@@ -1,7 +1,8 @@
-﻿import { notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { CardArt } from "@/components/CardArt";
 import { PriceSparkline } from "@/components/PriceSparkline";
-import { evidenceRecords, findCard, formatPeso, getPrimaryVersion } from "@/lib/data/cards";
+import { cards as staticCards, evidenceRecords, formatPeso, getPrimaryVersion } from "@/lib/data/cards";
+import { getCardWithLivePrices } from "@/lib/data/live-cards";
 
 type CardDetailPageProps = {
   params: {
@@ -10,13 +11,13 @@ type CardDetailPageProps = {
 };
 
 export function generateStaticParams() {
-  return ["F01-01", "F01-37", "F02-20", "F02-24", "F03-03", "F03-13", "F04-13", "F04-27"].map(
-    (cardNumber) => ({ cardNumber })
-  );
+  return staticCards.map((card) => ({ cardNumber: card.cardNumber }));
 }
 
-export default function CardDetailPage({ params }: CardDetailPageProps) {
-  const card = findCard(params.cardNumber);
+export const dynamic = "force-dynamic";
+
+export default async function CardDetailPage({ params }: CardDetailPageProps) {
+  const card = await getCardWithLivePrices(params.cardNumber);
 
   if (!card) {
     notFound();
@@ -41,7 +42,7 @@ export default function CardDetailPage({ params }: CardDetailPageProps) {
         </div>
         <div className="content-card">
           <span className="eyebrow">
-            {card.formationSet} Â· {card.rarity} Â· {card.cardNumber}
+            {card.formationSet} Ã‚Â· {card.rarity} Ã‚Â· {card.cardNumber}
           </span>
           <h1>{card.characterName}</h1>
           <p>{card.summary}</p>
@@ -135,14 +136,14 @@ export default function CardDetailPage({ params }: CardDetailPageProps) {
                 <tr key={version.id}>
                   <td>{version.versionCode}</td>
                   <td>
-                    {version.language} Â· {version.region}
+                    {version.language} Ã‚Â· {version.region}
                     <br />
                     <span className="muted">{version.verificationStatus}</span>
                   </td>
                   <td>{formatPeso(version.currentPublishedPricePhp)}</td>
                   <td>{version.versionRelationship}</td>
                   <td>
-                    {version.directEvidence} direct Â· {version.modeledEvidence} modeled
+                    {version.directEvidence} direct Ã‚Â· {version.modeledEvidence} modeled
                   </td>
                   <td>
                     <span className="pill live">{version.pricingState}</span>
@@ -160,8 +161,8 @@ export default function CardDetailPage({ params }: CardDetailPageProps) {
             <span className="label">Graded matrix</span>
             <h2>Raw-to-graded reference</h2>
             <p>
-              PSA 10 uses 6.00Ã—, BGS Pristine 10 uses 6.50Ã—, CGC Pristine 10 uses
-              5.00Ã—, and ARS 10 uses 3.50Ã—. BGS Black Label requires exact
+              PSA 10 uses 6.00Ãƒâ€”, BGS Pristine 10 uses 6.50Ãƒâ€”, CGC Pristine 10 uses
+              5.00Ãƒâ€”, and ARS 10 uses 3.50Ãƒâ€”. BGS Black Label requires exact
               evidence only.
             </p>
           </div>
@@ -172,11 +173,11 @@ export default function CardDetailPage({ params }: CardDetailPageProps) {
               {(records.length ? records : []).map((record) => (
                 <div className="timeline-item" key={record.id}>
                   <strong>
-                    {record.marketplace} Â· {formatPeso(record.phpPrice)}
+                    {record.marketplace} Ã‚Â· {formatPeso(record.phpPrice)}
                   </strong>
                   <br />
                   <span className="muted">
-                    {record.date} Â· {record.classification} Â· confidence {record.confidence}
+                    {record.date} Ã‚Â· {record.classification} Ã‚Â· confidence {record.confidence}
                   </span>
                 </div>
               ))}

@@ -1,4 +1,4 @@
-﻿export type PricingState =
+export type PricingState =
   | "UNINITIALIZED"
   | "INITIALIZED"
   | "LIVE"
@@ -424,15 +424,15 @@ export function getPrimaryVersion(card: Card): CardVersion {
   return card.versions[0];
 }
 
-export function getMarketSummary() {
-  const versions = cards.map((card) => ({
+export function getMarketSummary(cardList: Card[] = cards) {
+  const versions = cardList.map((card) => ({
     card,
     version: getPrimaryVersion(card)
   }));
 
   return {
-    totalCards: cards.length,
-    liveVersions: cards.flatMap((card) => card.versions).filter(
+    totalCards: cardList.length,
+    liveVersions: cardList.flatMap((card) => card.versions).filter(
       (version) => version.pricingState === "LIVE"
     ).length,
     lastMarketUpdate: "2026-08-04 09:00 PHT",

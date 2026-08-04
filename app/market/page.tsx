@@ -1,8 +1,12 @@
-import { MarketTable } from "@/components/MarketTable";
-import { cards, getMarketSummary } from "@/lib/data/cards";
+﻿import { MarketTable } from "@/components/MarketTable";
+import { getMarketSummary } from "@/lib/data/cards";
+import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
-export default function MarketPage() {
-  const summary = getMarketSummary();
+export const dynamic = "force-dynamic";
+
+export default async function MarketPage() {
+  const cards = await getCardsWithLivePrices();
+  const summary = getMarketSummary(cards);
 
   return (
     <section className="shell section">

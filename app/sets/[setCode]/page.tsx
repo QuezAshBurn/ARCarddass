@@ -1,6 +1,7 @@
-﻿import { notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { CardGrid } from "@/components/CardGrid";
-import { cards, getSetCode } from "@/lib/data/cards";
+import { getSetCode } from "@/lib/data/cards";
+import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
 const setCodes = ["F01", "F02", "F03", "F04"] as const;
 
@@ -14,7 +15,10 @@ export function generateStaticParams() {
   return setCodes.map((setCode) => ({ setCode }));
 }
 
-export default function SetPage({ params }: SetPageProps) {
+export const dynamic = "force-dynamic";
+
+export default async function SetPage({ params }: SetPageProps) {
+  const cards = await getCardsWithLivePrices();
   const setCode = params.setCode.toUpperCase();
 
   if (!setCodes.includes(setCode as (typeof setCodes)[number])) {

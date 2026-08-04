@@ -1,12 +1,16 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { CardFormation } from "@/components/cards/CardFormation";
 import { FormationWordmark } from "@/components/brand/FormationWordmark";
 import { MarketTable } from "@/components/MarketTable";
 import { PullExperience } from "@/components/pull/PullExperience";
-import { cards, evidenceRecords, formatPeso, getMarketSummary, getPrimaryVersion } from "@/lib/data/cards";
+import { evidenceRecords, formatPeso, getMarketSummary, getPrimaryVersion } from "@/lib/data/cards";
+import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
-export default function HomePage() {
-  const summary = getMarketSummary();
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const cards = await getCardsWithLivePrices();
+  const summary = getMarketSummary(cards);
   const highest = [...cards].sort(
     (a, b) => getPrimaryVersion(b).currentPublishedPricePhp - getPrimaryVersion(a).currentPublishedPricePhp
   )[0];

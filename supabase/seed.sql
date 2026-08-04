@@ -39,3 +39,44 @@ cross join (
     ('CN', 'Chinese', 'Greater China')
 ) as versions(version_code, language, region)
 on conflict (card_id, version_code) do nothing;
+
+with seed_current_prices(card_number, jp_price_php) as (
+  values
+    ('F01-01', 194000),
+    ('F01-37', 86500),
+    ('F02-20', 160000),
+    ('F02-24', 60000),
+    ('F03-03', 150000),
+    ('F03-13', 83500),
+    ('F04-13', 110000),
+    ('F04-27', 128000)
+), version_prices as (
+  select
+    cards.id as card_id,
+    versions.version_code,
+    case
+      when versions.version_code = 'JP' then seed_current_prices.jp_price_php
+      when versions.version_code = 'EN' then round(seed_current_prices.jp_price_php * 0.90)
+      when versions.version_code = 'CN' then round(seed_current_prices.jp_price_php * 0.85)
+    end as published_price_php
+  from seed_current_prices
+  join cards on cards.card_number = seed_current_prices.card_number
+  cross join (
+    values ('JP'), ('EN'), ('CN')
+  ) as versions(version_code)
+)
+update card_versions
+set
+  pricing_state = 'LIVE',
+  initial_reference_price_php = round(version_prices.published_price_php * 0.93),
+  initial_reference_locked_at = coalesce(card_versions.initial_reference_locked_at, now()),
+  current_calculated_price_php = version_prices.published_price_php,
+  current_published_price_php = version_prices.published_price_php,
+  high_water_reference_php = round(version_prices.published_price_php * 1.08),
+  highest_verified_sale_php = round(version_prices.published_price_php * 1.02),
+  last_market_update_at = now(),
+  updated_at = now()
+from version_prices
+where
+  card_versions.card_id = version_prices.card_id
+  and card_versions.version_code = version_prices.version_code;

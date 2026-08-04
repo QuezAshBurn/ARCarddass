@@ -1,5 +1,5 @@
-import { CardGrid } from "@/components/CardGrid";
-import { cards } from "@/lib/data/cards";
+﻿import { CardGrid } from "@/components/CardGrid";
+import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
 const filterLabels = [
   "Formation 01",
@@ -15,7 +15,11 @@ const filterLabels = [
   "Pricing live"
 ];
 
-export default function CataloguePage() {
+export const dynamic = "force-dynamic";
+
+export default async function CataloguePage() {
+  const cards = await getCardsWithLivePrices();
+
   return (
     <section className="shell section">
       <span className="eyebrow">Catalogue</span>

@@ -892,6 +892,119 @@ tr:last-child td {
   border-bottom: 0;
 }
 
+
+@media (max-width: 70rem) {
+  .version-table-wrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .version-table,
+  .version-table thead,
+  .version-table tbody,
+  .version-table tr,
+  .version-table th,
+  .version-table td {
+    display: block;
+  }
+
+  .version-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .version-table tbody {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .version-table tr {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.8rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    background: rgba(15, 13, 20, 0.82);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .version-table td {
+    border-bottom: 0;
+    padding: 0;
+    font-size: 0.98rem;
+  }
+
+  .version-table td::before {
+    display: block;
+    margin-bottom: 0.22rem;
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .version-table td[data-label="Version"] {
+    grid-row: span 2;
+    min-width: 3rem;
+    color: var(--ar-gold-200);
+    font-family: var(--font-display);
+    font-size: 2.15rem;
+    line-height: 0.95;
+  }
+
+  .version-table td[data-label="Version"]::before {
+    color: rgba(255, 229, 138, 0.58);
+  }
+
+  .version-table td[data-label="Identity"] {
+    min-width: 0;
+    font-size: 1.02rem;
+    font-weight: 800;
+  }
+
+  .version-table td[data-label="Market price"] {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
+    padding-top: 0.85rem;
+    color: var(--ar-silver-50);
+    font-size: 1.35rem;
+    font-weight: 900;
+  }
+
+  .version-table td[data-label="Market price"]::before,
+  .version-table td[data-label="Relationship"]::before,
+  .version-table td[data-label="Evidence"]::before,
+  .version-table td[data-label="State"]::before {
+    margin-bottom: 0;
+    flex: 0 0 auto;
+  }
+
+  .version-table td[data-label="Relationship"],
+  .version-table td[data-label="Evidence"],
+  .version-table td[data-label="State"] {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 0;
+    text-align: right;
+  }
+}
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -1159,6 +1272,117 @@ tr:last-child td {
   .market-table td[data-label="Updated"] {
     align-items: start;
     font-size: 0.92rem;
+  }
+
+  .version-table-wrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .version-table,
+  .version-table thead,
+  .version-table tbody,
+  .version-table tr,
+  .version-table th,
+  .version-table td {
+    display: block;
+  }
+
+  .version-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .version-table tbody {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .version-table tr {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.8rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    background: rgba(15, 13, 20, 0.82);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .version-table td {
+    border-bottom: 0;
+    padding: 0;
+    font-size: 0.98rem;
+  }
+
+  .version-table td::before {
+    display: block;
+    margin-bottom: 0.22rem;
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .version-table td[data-label="Version"] {
+    grid-row: span 2;
+    min-width: 3rem;
+    color: var(--ar-gold-200);
+    font-family: var(--font-display);
+    font-size: 2.15rem;
+    line-height: 0.95;
+  }
+
+  .version-table td[data-label="Version"]::before {
+    color: rgba(255, 229, 138, 0.58);
+  }
+
+  .version-table td[data-label="Identity"] {
+    font-size: 1.02rem;
+    font-weight: 800;
+  }
+
+  .version-table td[data-label="Market price"] {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
+    padding-top: 0.85rem;
+    color: var(--ar-silver-50);
+    font-size: 1.35rem;
+    font-weight: 900;
+  }
+
+  .version-table td[data-label="Market price"]::before {
+    margin-bottom: 0;
+  }
+
+  .version-table td[data-label="Relationship"],
+  .version-table td[data-label="Evidence"],
+  .version-table td[data-label="State"] {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .version-table td[data-label="Relationship"]::before,
+  .version-table td[data-label="Evidence"]::before,
+  .version-table td[data-label="State"]::before {
+    margin-bottom: 0;
+    flex: 0 0 auto;
   }
   .nav-inner,
   .section-head {

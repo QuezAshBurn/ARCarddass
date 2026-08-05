@@ -120,8 +120,8 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             <h2>Version-specific pricing</h2>
           </div>
         </div>
-        <div className="table-wrap">
-          <table>
+        <div className="table-wrap version-table-wrap">
+          <table className="version-table">
             <thead>
               <tr>
                 <th>Version</th>
@@ -135,18 +135,18 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             <tbody>
               {card.versions.map((version) => (
                 <tr key={version.id}>
-                  <td>{version.versionCode}</td>
-                  <td>
+                  <td data-label="Version">{version.versionCode}</td>
+                  <td data-label="Identity">
                     {version.language} &middot; {version.region}
                     <br />
                     <span className="muted">{version.verificationStatus}</span>
                   </td>
-                  <td>{formatPeso(version.currentPublishedPricePhp)}</td>
-                  <td>{version.versionRelationship}</td>
-                  <td>
+                  <td data-label="Market price">{formatPeso(version.currentPublishedPricePhp)}</td>
+                  <td data-label="Relationship">{version.versionRelationship}</td>
+                  <td data-label="Evidence">
                     {version.directEvidence} direct &middot; {version.modeledEvidence} modeled
                   </td>
-                  <td>
+                  <td data-label="State">
                     <span className="pill live">{version.pricingState}</span>
                   </td>
                 </tr>

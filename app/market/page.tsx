@@ -10,13 +10,18 @@ export default async function MarketPage() {
 
   return (
     <section className="shell section">
-      <span className="eyebrow">Market dashboard</span>
-      <h1>Twice-daily movement from current published prices.</h1>
-      <p>
-        This view ranks prices, demand, scarcity, card rarity, visible circulation,
-        and latest movement across all live premium launch cards. Prices are
-        updated from market signals, not random adjustments.
-      </p>
+      <div className="section-head">
+        <div>
+          <span className="eyebrow">Market dashboard</span>
+          <h1>Twice-daily movement from current published prices.</h1>
+          <p>
+            This view ranks prices, demand, scarcity, card rarity, visible circulation,
+            and latest movement across all live premium launch cards. Prices are
+            updated from market signals, not random adjustments.
+          </p>
+        </div>
+        <span className="pill">{summary.lastMarketUpdate}</span>
+      </div>
       <div className="grid three">
         <div className="content-card">
           <span className="label">Most demanded</span>

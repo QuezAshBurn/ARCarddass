@@ -85,7 +85,7 @@ export default async function HomePage() {
             <span className="label">Market board</span>
             <h2>Readable prices, no casino confetti.</h2>
           </div>
-          <span className="pill">Updated {summary.lastMarketUpdate}</span>
+          <span className="pill">{summary.lastMarketUpdate}</span>
         </div>
         <MarketTable cards={cards} />
       </section>

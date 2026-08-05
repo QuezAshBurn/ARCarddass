@@ -1,4 +1,4 @@
-﻿import type { Card } from "@/lib/data/cards";
+import type { Card } from "@/lib/data/cards";
 import { cards } from "@/lib/data/cards";
 import { getPublicSupabaseClient } from "@/lib/database/supabase";
 
@@ -61,6 +61,7 @@ export async function getCardsWithLivePrices(): Promise<Card[]> {
     version.weeklyChangePhp = version.currentPublishedPricePhp - previousPrice;
     version.weeklyChangePercent =
       previousPrice === 0 ? 0 : (version.weeklyChangePhp / previousPrice) * 100;
+    version.lastMarketUpdateAt = row.last_market_update_at;
 
     if (version.versionCode === "JP") {
       const latestPoint = card.priceHistory[card.priceHistory.length - 1];

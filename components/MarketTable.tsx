@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Card } from "@/lib/data/cards";
-import { formatPeso, getPrimaryVersion } from "@/lib/data/cards";
+import { formatMarketUpdateAt, formatPeso, getPrimaryVersion } from "@/lib/data/cards";
 
 type MarketTableProps = {
   cards: Card[];
@@ -22,6 +22,7 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
             <th>Demand</th>
             <th>Scarcity</th>
             <th>Confidence</th>
+            <th>Updated</th>
           </tr>
         </thead>
         <tbody>
@@ -50,6 +51,7 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
                 <td>{primary.demandScore}/100</td>
                 <td>{primary.scarcityScore}/100</td>
                 <td>{primary.confidence}</td>
+                <td>{formatMarketUpdateAt(primary.lastMarketUpdateAt) ?? "Pending"}</td>
               </tr>
             );
           })}

@@ -19,6 +19,7 @@ export type CardVersion = {
   highestVerifiedSalePhp: number;
   weeklyChangePhp: number;
   weeklyChangePercent: number;
+  lastMarketUpdateAt?: string | null;
   demandScore: number;
   scarcityScore: number;
   confidence: "High" | "Moderate" | "Low";
@@ -424,6 +425,48 @@ export function getPrimaryVersion(card: Card): CardVersion {
   return card.versions[0];
 }
 
+export function formatMarketUpdateAt(value?: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).formatToParts(date);
+
+  const getPart = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
+
+  return `${getPart("year")}-${getPart("month")}-${getPart("day")} ${getPart("hour")}:${getPart("minute")} PHT`;
+}
+
+export function formatMarketUpdateLabel(value?: string | null): string {
+  const formatted = formatMarketUpdateAt(value);
+
+  return formatted ? `Updated ${formatted}` : "Awaiting live update";
+}
+
+function getLatestMarketUpdateAt(cardList: Card[]): string | null {
+  const timestamps = cardList
+    .flatMap((card) => card.versions.map((version) => version.lastMarketUpdateAt))
+    .filter((value): value is string => Boolean(value))
+    .map((value) => new Date(value))
+    .filter((date) => !Number.isNaN(date.getTime()))
+    .sort((a, b) => b.getTime() - a.getTime());
+
+  return timestamps[0]?.toISOString() ?? null;
+}
 export function getMarketSummary(cardList: Card[] = cards) {
   const versions = cardList.map((card) => ({
     card,
@@ -435,7 +478,7 @@ export function getMarketSummary(cardList: Card[] = cards) {
     liveVersions: cardList.flatMap((card) => card.versions).filter(
       (version) => version.pricingState === "LIVE"
     ).length,
-    lastMarketUpdate: "2026-08-04 09:00 PHT",
+    lastMarketUpdate: formatMarketUpdateLabel(getLatestMarketUpdateAt(cardList)),
     biggestGainers: [...versions].sort(
       (a, b) => b.version.weeklyChangePercent - a.version.weeklyChangePercent
     ),

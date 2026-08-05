@@ -18,6 +18,10 @@ function getCardNumber(row: CardVersionPriceRow): string | undefined {
   return row.cards?.card_number;
 }
 
+function normalizeVersionCode(versionCode: string): string {
+  return versionCode === "CN" || versionCode === "TW" ? "HK" : versionCode;
+}
+
 function copyStaticCards(): Card[] {
   return cards.map((card) => ({
     ...card,
@@ -49,7 +53,8 @@ export async function getCardsWithLivePrices(): Promise<Card[]> {
   for (const row of data as CardVersionPriceRow[]) {
     const cardNumber = getCardNumber(row);
     const card = liveCards.find((item) => item.cardNumber === cardNumber);
-    const version = card?.versions.find((item) => item.versionCode === row.version_code);
+    const versionCode = normalizeVersionCode(row.version_code);
+    const version = card?.versions.find((item) => item.versionCode === versionCode);
     const publishedPrice = Number(row.current_published_price_php);
 
     if (!card || !version || !Number.isFinite(publishedPrice)) {

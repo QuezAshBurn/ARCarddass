@@ -36,7 +36,7 @@ cross join (
   values
     ('JP', 'Japanese', 'Japan'),
     ('EN', 'English', 'International'),
-    ('CN', 'Chinese', 'Greater China')
+    ('HK', 'Chinese', 'CN / TW / HK')
 ) as versions(version_code, language, region)
 on conflict (card_id, version_code) do nothing;
 
@@ -57,12 +57,12 @@ with seed_current_prices(card_number, jp_price_php) as (
     case
       when versions.version_code = 'JP' then seed_current_prices.jp_price_php
       when versions.version_code = 'EN' then round(seed_current_prices.jp_price_php * 0.90)
-      when versions.version_code = 'CN' then round(seed_current_prices.jp_price_php * 0.85)
+      when versions.version_code = 'HK' then round(seed_current_prices.jp_price_php * 0.85)
     end as published_price_php
   from seed_current_prices
   join cards on cards.card_number = seed_current_prices.card_number
   cross join (
-    values ('JP'), ('EN'), ('CN')
+    values ('JP'), ('EN'), ('HK')
   ) as versions(version_code)
 )
 update card_versions

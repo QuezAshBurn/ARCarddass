@@ -84,12 +84,12 @@ export function adjustConditionToNearMint(
   return Math.round(pricePhp * conditionNmMultipliers[condition]);
 }
 
-export function modelVersionPrices(anchor: "JP" | "EN" | "CN", anchorPricePhp: number) {
+export function modelVersionPrices(anchor: "JP" | "EN" | "HK", anchorPricePhp: number) {
   if (anchor === "JP") {
     return {
       JP: Math.round(anchorPricePhp),
       EN: Math.round(anchorPricePhp * versionRelationships.JP_TO_EN),
-      CN: Math.round(anchorPricePhp * versionRelationships.JP_TO_CN),
+      HK: Math.round(anchorPricePhp * versionRelationships.JP_TO_HK),
       primaryAnchor: "JP"
     };
   }
@@ -100,18 +100,18 @@ export function modelVersionPrices(anchor: "JP" | "EN" | "CN", anchorPricePhp: n
     return {
       JP: Math.round(jp),
       EN: Math.round(anchorPricePhp),
-      CN: Math.round(jp * versionRelationships.JP_TO_CN),
+      HK: Math.round(jp * versionRelationships.JP_TO_HK),
       primaryAnchor: "EN"
     };
   }
 
-  const jp = anchorPricePhp * versionRelationships.CN_TO_JP;
+  const jp = anchorPricePhp * versionRelationships.HK_TO_JP;
 
   return {
     JP: Math.round(jp),
     EN: Math.round(jp * versionRelationships.JP_TO_EN),
-    CN: Math.round(anchorPricePhp),
-    primaryAnchor: "CN"
+    HK: Math.round(anchorPricePhp),
+    primaryAnchor: "HK"
   };
 }
 

@@ -42,11 +42,11 @@ describe("initial pricing", () => {
     expect(adjustConditionToNearMint(100000, "moderate_damage")).toBe(145000);
   });
 
-  it("models EN and CN from a JP anchor", () => {
+  it("models EN and HK from a JP anchor", () => {
     expect(modelVersionPrices("JP", 100000)).toEqual({
       JP: 100000,
       EN: 90000,
-      CN: 85000,
+      HK: 85000,
       primaryAnchor: "JP"
     });
   });

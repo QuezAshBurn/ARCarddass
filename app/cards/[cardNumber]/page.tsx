@@ -42,7 +42,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
         </div>
         <div className="content-card">
           <span className="eyebrow">
-            {card.formationSet} Ã‚Â· {card.rarity} Ã‚Â· {card.cardNumber}
+            {card.formationSet} &middot; {card.rarity} &middot; {card.cardNumber}
           </span>
           <h1>{card.characterName}</h1>
           <p>{card.summary}</p>
@@ -137,14 +137,14 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
                 <tr key={version.id}>
                   <td>{version.versionCode}</td>
                   <td>
-                    {version.language} Ã‚Â· {version.region}
+                    {version.language} &middot; {version.region}
                     <br />
                     <span className="muted">{version.verificationStatus}</span>
                   </td>
                   <td>{formatPeso(version.currentPublishedPricePhp)}</td>
                   <td>{version.versionRelationship}</td>
                   <td>
-                    {version.directEvidence} direct Ã‚Â· {version.modeledEvidence} modeled
+                    {version.directEvidence} direct &middot; {version.modeledEvidence} modeled
                   </td>
                   <td>
                     <span className="pill live">{version.pricingState}</span>
@@ -162,9 +162,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             <span className="label">Graded matrix</span>
             <h2>Raw-to-graded reference</h2>
             <p>
-              PSA 10 uses 6.00Ãƒâ€”, BGS Pristine 10 uses 6.50Ãƒâ€”, CGC Pristine 10 uses
-              5.00Ãƒâ€”, and ARS 10 uses 3.50Ãƒâ€”. BGS Black Label requires exact
-              evidence only.
+              PSA 10 uses 6.00&times;, BGS Pristine 10 uses 6.50&times;, CGC Pristine 10 uses 5.00&times;, and ARS 10 uses 3.50&times;. BGS Black Label requires exact evidence only.
             </p>
           </div>
           <div className="content-card">
@@ -174,11 +172,11 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
               {(records.length ? records : []).map((record) => (
                 <div className="timeline-item" key={record.id}>
                   <strong>
-                    {record.marketplace} Ã‚Â· {formatPeso(record.phpPrice)}
+                    {record.marketplace} &middot; {formatPeso(record.phpPrice)}
                   </strong>
                   <br />
                   <span className="muted">
-                    {record.date} Ã‚Â· {record.classification} Ã‚Â· confidence {record.confidence}
+                    {record.date} &middot; {record.classification} &middot; confidence {record.confidence}
                   </span>
                 </div>
               ))}

@@ -7,7 +7,7 @@ export type PricingState =
 
 export type CardVersion = {
   id: string;
-  versionCode: "JP" | "EN" | "CN" | "HK";
+  versionCode: "JP" | "EN" | "HK";
   language: string;
   region: string;
   verificationStatus: "confirmed" | "modeled" | "needs-review";
@@ -90,7 +90,7 @@ function makeVersions(
 ): CardVersion[] {
   const jp = basePrice;
   const en = Math.round(jp * 0.9);
-  const cn = Math.round(jp * 0.85);
+  const hk = Math.round(jp * 0.85);
   const changePhp = Math.round(jp * changePercent);
 
   return [
@@ -121,7 +121,7 @@ function makeVersions(
       region: "International",
       verificationStatus: "modeled",
       pricingState: "LIVE",
-      versionRelationship: "EN = JP Ãƒâ€” 0.90",
+      versionRelationship: "EN = JP x 0.90",
       currentPublishedPricePhp: en,
       initialReferencePricePhp: Math.round(en * 0.93),
       highWaterReferencePhp: Math.round(en * 1.08),
@@ -135,17 +135,17 @@ function makeVersions(
       modeledEvidence: 2
     },
     {
-      id: `${cardNumber}-CN`,
-      versionCode: "CN",
+      id: `${cardNumber}-HK`,
+      versionCode: "HK",
       language: "Chinese",
-      region: "Greater China",
+      region: "CN / TW / HK",
       verificationStatus: "modeled",
       pricingState: "LIVE",
-      versionRelationship: "CN = JP Ãƒâ€” 0.85",
-      currentPublishedPricePhp: cn,
-      initialReferencePricePhp: Math.round(cn * 0.93),
-      highWaterReferencePhp: Math.round(cn * 1.08),
-      highestVerifiedSalePhp: Math.round(cn * 1.01),
+      versionRelationship: "HK = JP x 0.85",
+      currentPublishedPricePhp: hk,
+      initialReferencePricePhp: Math.round(hk * 0.93),
+      highWaterReferencePhp: Math.round(hk * 1.08),
+      highestVerifiedSalePhp: Math.round(hk * 1.01),
       weeklyChangePhp: Math.round(changePhp * 0.85),
       weeklyChangePercent: changePercent * 100,
       demandScore: Math.max(0, demandScore - 5),
@@ -206,29 +206,7 @@ export const cards: Card[] = [
     accentB: "#7c3aed",
     summary: "Configured as the first initial-pricing acceptance-test candidate.",
     frontImagePath: "/assets/card-scans/f02-20-boa.png",
-    versions: [
-      ...makeVersions("F02-20", 160000, 0.026, 83, 90, "High"),
-      {
-        id: "F02-20-HK",
-        versionCode: "HK",
-        language: "Chinese",
-        region: "Hong Kong",
-        verificationStatus: "confirmed",
-        pricingState: "LIVE",
-        versionRelationship: "Direct ARS 10 anchor, JP reverse-modeled",
-        currentPublishedPricePhp: 137750,
-        initialReferencePricePhp: 132400,
-        highWaterReferencePhp: 154000,
-        highestVerifiedSalePhp: 151800,
-        weeklyChangePhp: 3400,
-        weeklyChangePercent: 2.53,
-        demandScore: 85,
-        scarcityScore: 90,
-        confidence: "High",
-        directEvidence: 3,
-        modeledEvidence: 1
-      }
-    ],
+    versions: makeVersions("F02-20", 160000, 0.026, 83, 90, "High"),
     priceHistory: makeHistory(132500, 0.0296)
   },
   {

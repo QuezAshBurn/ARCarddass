@@ -1,4 +1,4 @@
-﻿import { CardGrid } from "@/components/CardGrid";
+import { CardGrid } from "@/components/CardGrid";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
 const filterLabels = [
@@ -10,7 +10,7 @@ const filterLabels = [
   "SKR",
   "JP",
   "EN",
-  "CN",
+  "HK",
   "Tier 1",
   "Pricing live"
 ];

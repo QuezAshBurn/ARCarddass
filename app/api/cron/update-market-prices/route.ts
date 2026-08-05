@@ -16,6 +16,10 @@ type DbVersionRow = {
     | null;
 };
 
+function normalizeVersionCode(versionCode: string): string {
+  return versionCode === "CN" || versionCode === "TW" ? "HK" : versionCode;
+}
+
 function getIsoTimestamp(date: Date): string {
   return date.toISOString();
 }
@@ -132,7 +136,7 @@ export async function GET(request: Request) {
     const cardNumber = getCardNumber(dbVersion);
     const staticCard = staticCards.find((card) => card.cardNumber === cardNumber);
     const staticVersion = staticCard?.versions.find(
-      (version) => version.versionCode === dbVersion.version_code
+      (version) => version.versionCode === normalizeVersionCode(dbVersion.version_code)
     );
 
     if (!staticCard || !staticVersion) {

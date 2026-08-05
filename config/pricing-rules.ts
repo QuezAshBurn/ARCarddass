@@ -36,9 +36,9 @@ export const conditionNmMultipliers = {
 
 export const versionRelationships = {
   EN_TO_JP: 1 / 0.9,
-  CN_TO_JP: 1 / 0.85,
+  HK_TO_JP: 1 / 0.85,
   JP_TO_EN: 0.9,
-  JP_TO_CN: 0.85
+  JP_TO_HK: 0.85
 } as const;
 
 export const kpiWeights = {

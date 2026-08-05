@@ -26,6 +26,10 @@ function getCurrentPricingSlotStart(now: Date): Date {
 function getPreviousPricingSlotStart(slotStart: Date): Date {
   return new Date(slotStart.getTime() - halfDayMs);
 }
+type FreshEvidenceRow = {
+  card_version_id: string;
+};
+
 type DbVersionRow = {
   id: string;
   version_code: string;
@@ -147,9 +151,37 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
     );
   }
 
+  const versionRows = dbVersions as DbVersionRow[];
+  const versionIds = versionRows.map((version) => version.id);
+  const freshEvidenceVersionIds = new Set<string>();
+
+  if (versionIds.length > 0) {
+    const { data: freshEvidence, error: freshEvidenceError } = await supabase
+      .from("market_evidence")
+      .select("card_version_id")
+      .in("card_version_id", versionIds)
+      .in("evidence_status", ["accepted", "stored"])
+      .gte("created_at", pricingPeriodStart)
+      .lt("created_at", pricingPeriodEnd);
+
+    if (freshEvidenceError) {
+      await supabase
+        .from("job_runs")
+        .update({ status: "FAILED", error_message: freshEvidenceError.message })
+        .eq("job_type", "MARKET_PRICE_UPDATE")
+        .eq("run_key", runKey);
+
+      return NextResponse.json({ error: freshEvidenceError.message }, { status: 500 });
+    }
+
+    for (const evidence of (freshEvidence ?? []) as FreshEvidenceRow[]) {
+      freshEvidenceVersionIds.add(evidence.card_version_id);
+    }
+  }
+
   const updates = [];
 
-  for (const dbVersion of dbVersions as DbVersionRow[]) {
+  for (const dbVersion of versionRows) {
     const cardNumber = getCardNumber(dbVersion);
     const staticCard = staticCards.find((card) => card.cardNumber === cardNumber);
     const staticVersion = staticCard?.versions.find(
@@ -167,7 +199,9 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
         ? Math.round(currentPublishedPricePhp)
         : staticVersion.currentPublishedPricePhp
     };
-    const update = calculateMarketUpdateForVersion(staticCard, versionForCalculation);
+    const update = calculateMarketUpdateForVersion(staticCard, versionForCalculation, {
+      hasFreshMaterialEvidence: freshEvidenceVersionIds.has(dbVersion.id)
+    });
 
     const { data: snapshot, error: snapshotError } = await supabase
       .from("price_snapshots")

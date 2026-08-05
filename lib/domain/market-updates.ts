@@ -2,18 +2,30 @@ import type { Card, CardVersion } from "@/lib/data/cards";
 import { getPrimaryVersion } from "@/lib/data/cards";
 import { calculateWeeklyMarketPrice } from "@/lib/domain/pricing";
 
+type MarketUpdateOptions = {
+  hasFreshMaterialEvidence?: boolean;
+  hasMajorOutlier?: boolean;
+  verifiedSaleCount?: number;
+};
+
 function clampScore(score: number): number {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
-export function buildMarketInputForVersion(version: CardVersion) {
-  const verifiedSaleCount = version.directEvidence >= 4 ? 2 : version.directEvidence > 0 ? 1 : 0;
+export function buildMarketInputForVersion(
+  version: CardVersion,
+  options: MarketUpdateOptions = {}
+) {
+  const verifiedSaleCount =
+    options.verifiedSaleCount ??
+    (version.directEvidence >= 4 ? 2 : version.directEvidence > 0 ? 1 : 0);
+  const hasFreshMaterialEvidence = options.hasFreshMaterialEvidence ?? true;
 
   return {
     currentPublishedPricePhp: version.currentPublishedPricePhp,
     verifiedSaleCount,
-    hasFreshMaterialEvidence: true,
-    hasMajorOutlier: false,
+    hasFreshMaterialEvidence,
+    hasMajorOutlier: options.hasMajorOutlier ?? false,
     transactionScore: clampScore(50 + version.weeklyChangePercent * 4),
     buyerIntentScore: clampScore(version.demandScore),
     searchDemandScore: clampScore(45 + version.demandScore * 0.35),
@@ -23,8 +35,12 @@ export function buildMarketInputForVersion(version: CardVersion) {
   };
 }
 
-export function calculateMarketUpdateForVersion(card: Card, version: CardVersion) {
-  const input = buildMarketInputForVersion(version);
+export function calculateMarketUpdateForVersion(
+  card: Card,
+  version: CardVersion,
+  options: MarketUpdateOptions = {}
+) {
+  const input = buildMarketInputForVersion(version, options);
   const result = calculateWeeklyMarketPrice(input);
 
   return {

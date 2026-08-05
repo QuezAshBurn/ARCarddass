@@ -1,12 +1,14 @@
 import { MarketTable } from "@/components/MarketTable";
 import { getMarketSummary } from "@/lib/data/cards";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
+import { ensureMarketPricesFresh } from "@/lib/server/market-price-cron";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
 export default async function MarketPage() {
+  await ensureMarketPricesFresh();
   const cards = await getCardsWithLivePrices();
   const summary = getMarketSummary(cards);
 

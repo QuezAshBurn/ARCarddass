@@ -5,6 +5,27 @@ import { calculateMarketUpdateForVersion } from "@/lib/domain/market-updates";
 import { requireCronSecret } from "@/lib/http/cron";
 import { methodologyVersion } from "@/config/pricing-rules";
 
+const manilaUtcOffsetMs = 8 * 60 * 60 * 1000;
+const halfDayMs = 12 * 60 * 60 * 1000;
+
+type MarketPriceUpdateOptions = {
+  now?: Date;
+};
+
+function getCurrentPricingSlotStart(now: Date): Date {
+  const manilaDate = new Date(now.getTime() + manilaUtcOffsetMs);
+  const localYear = manilaDate.getUTCFullYear();
+  const localMonth = manilaDate.getUTCMonth();
+  const localDay = manilaDate.getUTCDate();
+  const localHour = manilaDate.getUTCHours();
+  const localSlotHour = localHour >= 12 ? 12 : 0;
+
+  return new Date(Date.UTC(localYear, localMonth, localDay, localSlotHour) - manilaUtcOffsetMs);
+}
+
+function getPreviousPricingSlotStart(slotStart: Date): Date {
+  return new Date(slotStart.getTime() - halfDayMs);
+}
 type DbVersionRow = {
   id: string;
   version_code: string;
@@ -24,11 +45,11 @@ function getIsoTimestamp(date: Date): string {
   return date.toISOString();
 }
 
-function getRunKey(now: Date): string {
-  const yyyy = now.getUTCFullYear();
-  const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(now.getUTCDate()).padStart(2, "0");
-  const hh = String(now.getUTCHours()).padStart(2, "0");
+function getRunKey(slotStart: Date): string {
+  const yyyy = slotStart.getUTCFullYear();
+  const mm = String(slotStart.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(slotStart.getUTCDate()).padStart(2, "0");
+  const hh = String(slotStart.getUTCHours()).padStart(2, "0");
 
   return `MARKET_PRICE_UPDATE:${yyyy}-${mm}-${dd}T${hh}:00Z`;
 }
@@ -49,17 +70,13 @@ function getCharacterName(row: DbVersionRow): string | undefined {
   return row.cards?.character_name;
 }
 
-export async function runMarketPriceUpdateCron(request: Request) {
-  const unauthorized = requireCronSecret(request);
-
-  if (unauthorized) {
-    return unauthorized;
-  }
-
-  const now = new Date();
-  const runKey = getRunKey(now);
-  const pricingPeriodEnd = getIsoTimestamp(now);
-  const pricingPeriodStart = getIsoTimestamp(new Date(Number(now) - 12 * 60 * 60 * 1000));
+export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {}) {
+  const now = options.now ?? new Date();
+  const slotStart = getCurrentPricingSlotStart(now);
+  const previousSlotStart = getPreviousPricingSlotStart(slotStart);
+  const runKey = getRunKey(slotStart);
+  const pricingPeriodEnd = getIsoTimestamp(slotStart);
+  const pricingPeriodStart = getIsoTimestamp(previousSlotStart);
   const supabase = getServiceSupabaseClient();
 
   if (!supabase) {
@@ -236,4 +253,59 @@ export async function runMarketPriceUpdateCron(request: Request) {
     processedVersionCount: updates.length,
     updates
   });
+}
+export async function runMarketPriceUpdateCron(request: Request) {
+  const unauthorized = requireCronSecret(request);
+
+  if (unauthorized) {
+    return unauthorized;
+  }
+
+  return runMarketPriceUpdate();
+}
+
+export async function ensureMarketPricesFresh() {
+  const supabase = getServiceSupabaseClient();
+
+  if (!supabase) {
+    return { status: "SKIPPED_NO_SUPABASE" as const };
+  }
+
+  const now = new Date();
+  const slotStart = getCurrentPricingSlotStart(now);
+  const runKey = getRunKey(slotStart);
+
+  const { data, error } = await supabase
+    .from("card_versions")
+    .select("last_market_update_at")
+    .eq("pricing_state", "LIVE")
+    .order("last_market_update_at", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("Could not check market freshness:", error.message);
+    return { status: "SKIPPED_FRESHNESS_CHECK_FAILED" as const, error: error.message };
+  }
+
+  const latestUpdateAt = data?.last_market_update_at
+    ? new Date(data.last_market_update_at)
+    : null;
+
+  if (latestUpdateAt && latestUpdateAt.getTime() >= slotStart.getTime()) {
+    return {
+      status: "FRESH" as const,
+      runKey,
+      latestUpdateAt: latestUpdateAt.toISOString(),
+      slotStart: slotStart.toISOString()
+    };
+  }
+
+  console.warn("Market prices are stale for the current slot; running catch-up update.", {
+    runKey,
+    latestUpdateAt: latestUpdateAt?.toISOString() ?? null,
+    slotStart: slotStart.toISOString()
+  });
+
+  return runMarketPriceUpdate({ now });
 }

@@ -5,11 +5,11 @@
       "schedule": "0 1 * * *"
     },
     {
-      "path": "/api/cron/update-market-prices",
+      "path": "/api/cron/update-market-prices-noon",
       "schedule": "0 4 * * *"
     },
     {
-      "path": "/api/cron/update-market-prices",
+      "path": "/api/cron/update-market-prices-midnight",
       "schedule": "0 16 * * *"
     }
   ]

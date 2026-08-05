@@ -168,7 +168,7 @@ export const cards: Card[] = [
     catalogueStatus: "live",
     accentA: "#d9253f",
     accentB: "#f6b93b",
-    summary: "Flagship KR card with broad collector demand and healthy weekly momentum.",
+    summary: "Flagship KR card with broad collector demand and healthy per-update momentum.",
     frontImagePath: "/assets/card-scans/f01-01-luffy.png",
     versions: makeVersions("F01-01", 194000, 0.018, 72, 75, "High"),
     priceHistory: luffyHistory.map((pricePhp, index) => ({
@@ -273,7 +273,7 @@ export const cards: Card[] = [
     catalogueStatus: "live",
     accentA: "#2563eb",
     accentB: "#facc15",
-    summary: "Stable week with buyer intent but limited confirmed transaction activity.",
+    summary: "Stable update cycle with buyer intent but limited confirmed transaction activity.",
     frontImagePath: "/assets/card-scans/f03-13-sanji.png",
     versions: makeVersions("F03-13", 83500, 0.006, 56, 60, "Moderate"),
     priceHistory: makeHistory(80000, 0.00625)

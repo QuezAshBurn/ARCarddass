@@ -5,6 +5,14 @@ type PriceSparklineProps = {
   history: PricePoint[];
 };
 
+const pricingBasis = [
+  "Supply and demand",
+  "Hard-to-find signals",
+  "Market rarity",
+  "Card rarity",
+  "Visible circulation"
+];
+
 export function PriceSparkline({ history }: PriceSparklineProps) {
   const width = 700;
   const height = 220;
@@ -22,31 +30,48 @@ export function PriceSparkline({ history }: PriceSparklineProps) {
   const line = points.map((point) => `${point.x},${point.y}`).join(" ");
 
   return (
-    <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img">
-      <title>Price history chart</title>
-      <rect width={width} height={height} rx="22" fill="rgba(255,255,255,0.62)" />
-      <polyline
-        fill="none"
-        points={line}
-        stroke="#2454ff"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="4"
-      />
-      {points.map((point) => (
-        <g key={point.week}>
-          <circle cx={point.x} cy={point.y} fill="#d9253f" r="5" />
-          <text fill="#626a7f" fontSize="12" textAnchor="middle" x={point.x} y={height - 8}>
-            {point.week}
-          </text>
-        </g>
-      ))}
-      <text fill="#0c1020" fontSize="14" fontWeight="700" x={padding} y={24}>
-        {formatPeso(values[values.length - 1])}
-      </text>
-      <text fill="#626a7f" fontSize="12" x={padding} y={44}>
-        8-week published market price
-      </text>
-    </svg>
+    <div className="price-chart">
+      <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img">
+        <title>Price history chart</title>
+        <rect width={width} height={height} rx="22" fill="rgba(255,255,255,0.62)" />
+        <polyline
+          fill="none"
+          points={line}
+          stroke="#2454ff"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="4"
+        />
+        {points.map((point) => (
+          <g key={point.week}>
+            <circle cx={point.x} cy={point.y} fill="#d9253f" r="5" />
+            <text fill="#626a7f" fontSize="12" textAnchor="middle" x={point.x} y={height - 8}>
+              {point.week}
+            </text>
+          </g>
+        ))}
+        <text fill="#0c1020" fontSize="14" fontWeight="700" x={padding} y={24}>
+          {formatPeso(values[values.length - 1])}
+        </text>
+        <text fill="#626a7f" fontSize="12" x={padding} y={44}>
+          8-update published market price
+        </text>
+      </svg>
+
+      <div className="chart-basis" aria-label="Pricing basis checked before every card update">
+        <div>
+          <span className="label">Before every update</span>
+          <p>
+            The chart movement is based on market signals reviewed before pricing runs,
+            not random adjustments.
+          </p>
+        </div>
+        <ul>
+          {pricingBasis.map((basis) => (
+            <li key={basis}>{basis}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }

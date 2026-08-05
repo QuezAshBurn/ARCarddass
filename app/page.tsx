@@ -27,7 +27,8 @@ export default async function HomePage() {
             <h1>Relive the pull. Track the market.</h1>
             <p>
               Track the rarest AR Carddass Formation cards with transparent PHP
-              pricing, market evidence, demand, scarcity, and daily movement.
+              pricing based on evidence, supply and demand, rarity, circulation,
+              and twice-daily movement.
             </p>
             <div className="hero__actions">
               <Link className="button primary" href="/pull">
@@ -50,10 +51,10 @@ export default async function HomePage() {
           <div className="stat-card">
             <span>Highest market price</span>
             <strong>{formatPeso(highestVersion.currentPublishedPricePhp)}</strong>
-            <p>{highest.characterName} Â· {highest.cardNumber}</p>
+            <p>{highest.characterName} · {highest.cardNumber}</p>
           </div>
           <div className="stat-card">
-            <span>Biggest weekly mover</span>
+            <span>Biggest per-update mover</span>
             <strong className="positive">+{summary.biggestGainers[0].version.weeklyChangePercent.toFixed(2)}%</strong>
             <p>{summary.biggestGainers[0].card.characterName}</p>
           </div>
@@ -95,8 +96,9 @@ export default async function HomePage() {
             <span className="label">Demand and scarcity</span>
             <h2>{summary.mostDemanded[0].card.characterName} leads demand.</h2>
             <p>
-              Demand and scarcity are surfaced as collector signals, not hidden
-              spreadsheet magic. Users can move from price to daily movement to
+              Supply, demand, hard-to-find signals, card rarity, market rarity,
+              and visible circulation are surfaced as collector signals, not
+              hidden spreadsheet magic. Users can move from price to movement to
               KPI calculation to evidence.
             </p>
           </div>
@@ -104,9 +106,10 @@ export default async function HomePage() {
             <span className="label">Trust model</span>
             <h2>Exciting first, inspectable always.</h2>
             <p>
-              Initial references lock once. Market updates start from the current
-              published price. Admin adjustments preserve the system result and
-              disclose the adjustment publicly.
+              Initial references lock once. Before each twice-daily update, the
+              system checks the market signals first, then applies capped pricing
+              movement. Admin adjustments preserve the system result and disclose
+              the adjustment publicly.
             </p>
           </div>
         </div>

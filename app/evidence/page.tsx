@@ -7,7 +7,7 @@ export default function EvidencePage() {
       <h1>Every price claim keeps its receipt.</h1>
       <p>
         Public evidence includes source, status, PHP value, version identity,
-        confidence, and whether it affected initialization, a weekly KPI update,
+        confidence, and whether it affected initialization, a twice-daily KPI update,
         or was held for review.
       </p>
       <div className="table-wrap">

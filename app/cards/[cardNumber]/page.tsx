@@ -52,7 +52,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
               <strong>{formatPeso(primary.currentPublishedPricePhp)}</strong>
             </div>
             <div className="stat-card">
-              <span>Weekly movement</span>
+              <span>Per-update movement</span>
               <strong className={primary.weeklyChangePercent >= 0 ? "positive" : "negative"}>
                 {primary.weeklyChangePercent >= 0 ? "+" : ""}
                 {primary.weeklyChangePercent.toFixed(2)}%
@@ -104,9 +104,10 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
               </div>
             </div>
             <p>
-              Demand uses verified transaction activity, buyer-intent deltas,
-              search demand, scarcity, momentum, and market breadth. No fresh
-              material evidence means zero movement, not automatic decline.
+              Pricing uses supply and demand, hard-to-find signals, market rarity,
+              card rarity, visible circulation, verified transaction activity,
+              and market breadth. No fresh material evidence means zero movement,
+              not automatic decline.
             </p>
           </div>
         </div>

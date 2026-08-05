@@ -18,7 +18,7 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
             <th>Card</th>
             <th>Rarity</th>
             <th>Market price</th>
-            <th>Weekly</th>
+            <th>Per update</th>
             <th>Demand</th>
             <th>Scarcity</th>
             <th>Confidence</th>

@@ -11,8 +11,8 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
   const visibleCards = typeof limit === "number" ? cards.slice(0, limit) : cards;
 
   return (
-    <div className="table-wrap">
-      <table>
+    <div className="table-wrap market-table-wrap">
+      <table className="market-table">
         <thead>
           <tr>
             <th>Card</th>
@@ -33,7 +33,7 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
 
             return (
               <tr key={card.cardNumber}>
-                <td>
+                <td data-label="Card">
                   <Link href={`/cards/${card.cardNumber}`}>
                     <strong>{card.characterName}</strong>
                     <br />
@@ -42,16 +42,16 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
                     </span>
                   </Link>
                 </td>
-                <td>{card.rarity}</td>
-                <td>{formatPeso(primary.currentPublishedPricePhp)}</td>
-                <td className={changeClass}>
+                <td data-label="Rarity">{card.rarity}</td>
+                <td data-label="Market price">{formatPeso(primary.currentPublishedPricePhp)}</td>
+                <td className={changeClass} data-label="Per update">
                   {primary.weeklyChangePercent >= 0 ? "+" : ""}
                   {primary.weeklyChangePercent.toFixed(2)}%
                 </td>
-                <td>{primary.demandScore}/100</td>
-                <td>{primary.scarcityScore}/100</td>
-                <td>{primary.confidence}</td>
-                <td>{formatMarketUpdateAt(primary.lastMarketUpdateAt) ?? "Pending"}</td>
+                <td data-label="Demand">{primary.demandScore}/100</td>
+                <td data-label="Scarcity">{primary.scarcityScore}/100</td>
+                <td data-label="Confidence">{primary.confidence}</td>
+                <td data-label="Updated">{formatMarketUpdateAt(primary.lastMarketUpdateAt) ?? "Pending"}</td>
               </tr>
             );
           })}

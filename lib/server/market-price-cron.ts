@@ -30,10 +30,23 @@ type FreshEvidenceRow = {
   card_version_id: string;
 };
 
+type MaterialMarketEventRow = {
+  id: string;
+  card_version_id: string;
+  event_type: string;
+  event_at: string;
+  validation_status: string;
+  seller_id: string | null;
+  marketplace_transaction_id: string | null;
+  marketplace_listing_id: string | null;
+};
+
 type DbVersionRow = {
   id: string;
+  card_id: string;
   version_code: string;
   pricing_state: string;
+  initial_reference_price_php: number | string | null;
   current_published_price_php: number | string | null;
   cards:
     | { card_number: string; character_name: string }
@@ -135,7 +148,7 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
 
   const { data: dbVersions, error: versionError } = await supabase
     .from("card_versions")
-    .select("id,version_code,pricing_state,current_published_price_php,cards(card_number,character_name)")
+    .select("id,card_id,version_code,pricing_state,initial_reference_price_php,current_published_price_php,cards(card_number,character_name)")
     .eq("pricing_state", "LIVE");
 
   if (versionError || !dbVersions) {
@@ -154,8 +167,48 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
   const versionRows = dbVersions as DbVersionRow[];
   const versionIds = versionRows.map((version) => version.id);
   const freshEvidenceVersionIds = new Set<string>();
+  const materialEventIdsByVersionId = new Map<string, string[]>();
+  const verifiedSaleKeysByVersionId = new Map<string, Set<string>>();
 
   if (versionIds.length > 0) {
+    const { data: materialEvents, error: marketEventError } = await supabase
+      .from("market_events")
+      .select(
+        "id,card_version_id,event_type,event_at,validation_status,seller_id,marketplace_transaction_id,marketplace_listing_id"
+      )
+      .in("card_version_id", versionIds)
+      .eq("validation_status", "ACCEPTED")
+      .gte("event_at", pricingPeriodStart)
+      .lt("event_at", pricingPeriodEnd)
+      .is("processed_at", null);
+
+    if (!marketEventError) {
+      for (const event of (materialEvents ?? []) as MaterialMarketEventRow[]) {
+        freshEvidenceVersionIds.add(event.card_version_id);
+
+        const existingIds = materialEventIdsByVersionId.get(event.card_version_id) ?? [];
+        existingIds.push(event.id);
+        materialEventIdsByVersionId.set(event.card_version_id, existingIds);
+
+        if (event.event_type === "VERIFIED_SALE") {
+          const sellerKey = event.seller_id ?? "unknown-seller";
+          const transactionKey =
+            event.marketplace_transaction_id ??
+            event.marketplace_listing_id ??
+            event.id;
+          const saleKey = `${sellerKey}:${transactionKey}`;
+          const keys = verifiedSaleKeysByVersionId.get(event.card_version_id) ?? new Set<string>();
+          keys.add(saleKey);
+          verifiedSaleKeysByVersionId.set(event.card_version_id, keys);
+        }
+      }
+    } else {
+      console.warn(
+        "market_events table is unavailable; falling back to legacy market_evidence.",
+        marketEventError.message
+      );
+    }
+
     const { data: freshEvidence, error: freshEvidenceError } = await supabase
       .from("market_evidence")
       .select("card_version_id")
@@ -200,8 +253,10 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
         : staticVersion.currentPublishedPricePhp
     };
     const update = calculateMarketUpdateForVersion(staticCard, versionForCalculation, {
-      hasFreshMaterialEvidence: freshEvidenceVersionIds.has(dbVersion.id)
+      hasFreshMaterialEvidence: freshEvidenceVersionIds.has(dbVersion.id),
+      verifiedSaleCount: verifiedSaleKeysByVersionId.get(dbVersion.id)?.size
     });
+    const evidenceIds = materialEventIdsByVersionId.get(dbVersion.id) ?? [];
 
     const { data: snapshot, error: snapshotError } = await supabase
       .from("price_snapshots")
@@ -219,10 +274,24 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
           market_score: update.result.marketScore,
           movement_cap_percent: update.result.movementCapPercent,
           calculated_movement_percent: update.result.calculatedMovementPercent,
+          previous_published_price_php: update.basePublishedPricePhp,
+          kpi_scores: {
+            transaction: update.input.transactionScore,
+            buyerIntent: update.input.buyerIntentScore,
+            searchDemand: update.input.searchDemandScore,
+            scarcity: update.input.scarcityScore,
+            priceMomentum: update.input.priceMomentumScore,
+            marketBreadth: update.input.marketBreadthScore
+          },
+          evidence_ids: evidenceIds,
+          raw_movement_percent: update.result.calculatedMovementPercent,
+          capped_movement_percent: update.result.calculatedMovementPercent,
           calculated_price_php: update.result.calculatedPricePhp,
           published_price_php: update.nextPublishedPricePhp,
           confidence: staticVersion.confidence,
-          methodology_version: methodologyVersion
+          methodology_version: methodologyVersion,
+          pricing_rule_version: methodologyVersion,
+          calculated_at: now.toISOString()
         },
         { onConflict: "card_version_id,pricing_period_start,pricing_period_end" }
       )
@@ -256,6 +325,37 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
         .eq("run_key", runKey);
 
       return NextResponse.json({ error: publishError.message }, { status: 500 });
+    }
+
+    const marketStatePayload = {
+      card_id: dbVersion.card_id,
+      card_code: cardNumber ?? update.cardNumber,
+      card_name: getCharacterName(dbVersion) ?? update.characterName,
+      rarity: update.rarity,
+      version: dbVersion.version_code,
+      initial_reference_price_php:
+        Number(dbVersion.initial_reference_price_php) || staticVersion.initialReferencePricePhp,
+      previous_published_price_php: update.basePublishedPricePhp,
+      calculated_price_php: update.result.calculatedPricePhp,
+      published_price_php: update.nextPublishedPricePhp,
+      confidence: staticVersion.confidence.toUpperCase(),
+      last_evidence_check_at: now.toISOString(),
+      last_calculated_at: now.toISOString(),
+      last_published_at: now.toISOString(),
+      source_card_version_id: dbVersion.id,
+      ...(evidenceIds.length > 0 ? { last_material_event_at: now.toISOString() } : {})
+    };
+
+    await supabase.from("market_states").upsert(
+      marketStatePayload,
+      { onConflict: "card_id,version" }
+    );
+
+    if (evidenceIds.length > 0) {
+      await supabase
+        .from("market_events")
+        .update({ processed_at: now.toISOString() })
+        .in("id", evidenceIds);
     }
 
     updates.push({

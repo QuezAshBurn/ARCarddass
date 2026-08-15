@@ -9,7 +9,7 @@ import type { PricingState } from "@/lib/data/cards";
 
 export type PricingAction =
   | "RUN_INITIAL_PRICING"
-  | "RUN_WEEKLY_MARKET_PRICING"
+  | "RUN_SCHEDULED_MARKET_PRICING"
   | "SKIP_AUTOMATIC_PRICING";
 
 export type InitialPricingCandidates = {
@@ -40,7 +40,7 @@ export function selectAutomaticPricingAction(state: PricingState): PricingAction
     case "UNINITIALIZED":
       return "RUN_INITIAL_PRICING";
     case "LIVE":
-      return "RUN_WEEKLY_MARKET_PRICING";
+      return "RUN_SCHEDULED_MARKET_PRICING";
     case "INITIALIZED":
     case "FROZEN":
     case "REBASE_PENDING":

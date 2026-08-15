@@ -1,4 +1,6 @@
-export const methodologyVersion = "2026.08.04";
+import marketRules from "@/config/market-rules.json";
+
+export const methodologyVersion = marketRules.pricingRuleVersion;
 
 export const gradeMultipliers = {
   PSA: {
@@ -42,18 +44,18 @@ export const versionRelationships = {
 } as const;
 
 export const kpiWeights = {
-  transaction: 0.35,
-  buyerIntent: 0.2,
-  searchDemand: 0.15,
-  scarcity: 0.15,
-  priceMomentum: 0.1,
-  marketBreadth: 0.05
+  transaction: marketRules.legacyKpiWeights.transaction,
+  buyerIntent: marketRules.legacyKpiWeights.buyerIntent,
+  searchDemand: marketRules.legacyKpiWeights.searchDemand,
+  scarcity: marketRules.legacyKpiWeights.scarcity,
+  priceMomentum: marketRules.legacyKpiWeights.priceMomentum,
+  marketBreadth: marketRules.legacyKpiWeights.marketBreadth
 } as const;
 
 export const movementCaps = {
-  noVerifiedSale: 0.015,
-  oneIndependentVerifiedSale: 0.075,
-  multipleIndependentVerifiedSales: 0.12
+  noVerifiedSale: marketRules.movementCaps.noVerifiedSale,
+  oneIndependentVerifiedSale: marketRules.movementCaps.oneIndependentVerifiedSale,
+  multipleIndependentVerifiedSales: marketRules.movementCaps.multipleIndependentVerifiedSales
 } as const;
 
 export const evidenceConfidenceGates = {

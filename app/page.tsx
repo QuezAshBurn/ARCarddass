@@ -32,7 +32,7 @@ export default async function HomePage() {
             <p>
               Track the rarest AR Carddass Formation cards with transparent PHP
               pricing based on evidence, supply and demand, rarity, circulation,
-              and twice-daily movement.
+              and twice-daily market checks.
             </p>
             <div className="hero__actions">
               <Link className="button primary" href="/pull">
@@ -110,10 +110,10 @@ export default async function HomePage() {
             <span className="label">Trust model</span>
             <h2>Exciting first, inspectable always.</h2>
             <p>
-              Initial references lock once. Before each twice-daily update, the
-              system checks the market signals first, then applies capped pricing
-              movement. Admin adjustments preserve the system result and disclose
-              the adjustment publicly.
+              Initial references lock once. Every scheduled check reviews market
+              signals first. No meaningful evidence means no market-price movement,
+              and verified transactions influence pricing without automatically
+              resetting the published price.
             </p>
           </div>
         </div>

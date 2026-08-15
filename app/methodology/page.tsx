@@ -41,12 +41,12 @@ export default function MethodologyPage() {
   return (
     <section className="shell section">
       <span className="eyebrow">Methodology</span>
-      <h1>Initial once. Twice daily after that. Always auditable.</h1>
+      <h1>Initial once. Checked twice daily. Movement only with evidence.</h1>
       <p>
         AR Carddass separates the opening reference calculation from recurring
-        market pricing. The twice-daily engine never falls back to initialization, and
-        high-water evidence remains informational unless the rules explicitly say
-        otherwise.
+        market pricing. Market evidence may be collected frequently, but published
+        prices only change when fresh validated evidence materially affects the
+        pricing KPIs. No meaningful evidence means no market-price movement.
       </p>
 
       <div className="content-card">
@@ -57,7 +57,8 @@ export default function MethodologyPage() {
           evidence behind each card: supply and demand, how hard it is to find,
           rarity in the market, the card rarity itself, and the number of copies
           visibly circulating. Those signals are checked before the price update
-          runs, then capped by the volatility rules below.
+          runs, then capped by the volatility rules below. Verified transactions
+          influence pricing but do not automatically reset published prices.
         </p>
         <div className="grid three">
           {pricingBasis.map(([name, detail]) => (
@@ -135,7 +136,7 @@ export default function MethodologyPage() {
         <h2>Automatic pricing state machine</h2>
         <pre className="formula">{`UNINITIALIZED -> runInitialPricing
 INITIALIZED   -> wait for approval
-LIVE          -> runTwiceDailyMarketPricing
+LIVE          -> runScheduledMarketPricing
 FROZEN        -> collect data only
 REBASE_PENDING -> audited rebase only`}</pre>
       </div>

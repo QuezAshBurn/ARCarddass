@@ -35,8 +35,27 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 CRON_SECRET=
+MARKET_EVENT_INGEST_SECRET=
 EBAY_CLIENT_ID=
 EBAY_CLIENT_SECRET=
 ```
 
-The current implementation ships a data-driven public shell, API stubs, pricing-rule code, tests, and Supabase schema scaffolding. Live collectors and admin mutations are intentionally isolated behind route and database boundaries so marketplace/API credentials remain server-side.
+`MARKET_EVENT_INGEST_SECRET` protects the admin evidence-ingestion API. If it is not set, the route falls back to `ADMIN_MARKET_EVENT_SECRET` and then `CRON_SECRET`.
+
+## Market-watch APIs
+
+```text
+GET  /api/market/snapshot
+GET  /api/market/events
+GET  /api/market/monitor
+POST /api/admin/market/events
+```
+
+Admin ingestion requires:
+
+```http
+Authorization: Bearer <MARKET_EVENT_INGEST_SECRET>
+Idempotency-Key: <stable event key>
+```
+
+The current implementation ships a data-driven public shell, deterministic pricing-rule code, tests, Supabase schema scaffolding, public market APIs, and a protected evidence-ingestion boundary. Live marketplace collectors remain pluggable so marketplace/API credentials stay server-side and source failures do not create false market signals.

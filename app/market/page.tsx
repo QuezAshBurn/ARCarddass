@@ -17,11 +17,12 @@ export default async function MarketPage() {
       <div className="section-head">
         <div>
           <span className="eyebrow">Market dashboard</span>
-          <h1>Twice-daily movement from current published prices.</h1>
+          <h1>Twice-daily checks, evidence-based movement.</h1>
           <p>
             This view ranks prices, demand, scarcity, card rarity, visible circulation,
-            and latest movement across all live premium launch cards. Prices are
-            updated from market signals, not random adjustments.
+            and latest movement across all live premium launch cards. The market can
+            be checked every noon and midnight, but prices only move when fresh
+            validated evidence materially affects the KPIs.
           </p>
         </div>
         <span className="pill">{summary.lastMarketUpdate}</span>

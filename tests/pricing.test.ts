@@ -12,7 +12,7 @@ import {
 describe("pricing state guard", () => {
   it("routes UNINITIALIZED to initial pricing and LIVE to weekly pricing", () => {
     expect(selectAutomaticPricingAction("UNINITIALIZED")).toBe("RUN_INITIAL_PRICING");
-    expect(selectAutomaticPricingAction("LIVE")).toBe("RUN_WEEKLY_MARKET_PRICING");
+    expect(selectAutomaticPricingAction("LIVE")).toBe("RUN_SCHEDULED_MARKET_PRICING");
   });
 
   it("does not automatically price initialized, frozen, or rebase-pending records", () => {
@@ -52,8 +52,8 @@ describe("initial pricing", () => {
   });
 });
 
-describe("weekly market pricing", () => {
-  it("matches the weekly update acceptance test", () => {
+describe("scheduled market pricing", () => {
+  it("matches the scheduled update acceptance test", () => {
     const result = calculateWeeklyMarketPrice({
       currentPublishedPricePhp: 100000,
       verifiedSaleCount: 1,

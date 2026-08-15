@@ -857,6 +857,184 @@ p {
   background: rgba(255, 200, 87, 0.14);
 }
 
+.market-watch {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid rgba(117, 234, 255, 0.14);
+  border-radius: calc(var(--radius-lg) + 0.35rem);
+  padding: clamp(1rem, 2vw, 1.4rem);
+  background:
+    radial-gradient(circle at top left, rgba(117, 234, 255, 0.14), transparent 24rem),
+    radial-gradient(circle at 80% 0, rgba(255, 229, 138, 0.12), transparent 22rem),
+    rgba(15, 13, 20, 0.78);
+  box-shadow: var(--shadow-soft);
+}
+
+.market-watch__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.32fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.market-watch__hero p {
+  max-width: 760px;
+  margin-bottom: 0;
+}
+
+.watch-status-card {
+  position: relative;
+  display: grid;
+  align-content: center;
+  gap: 0.3rem;
+  overflow: hidden;
+  border: 1px solid rgba(52, 223, 145, 0.2);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  background: rgba(52, 223, 145, 0.08);
+}
+
+.watch-status-card::after {
+  position: absolute;
+  inset: auto -18% -44% auto;
+  width: 9rem;
+  height: 9rem;
+  content: "";
+  border-radius: 999px;
+  background: rgba(52, 223, 145, 0.14);
+  filter: blur(6px);
+}
+
+.watch-status-card span:not(.pulse-dot),
+.watch-status-card small {
+  position: relative;
+  z-index: 1;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.watch-status-card strong {
+  position: relative;
+  z-index: 1;
+  color: var(--ar-white);
+  font-family: var(--font-ui);
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.pulse-dot {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 0.68rem;
+  height: 0.68rem;
+  border-radius: 999px;
+  background: var(--ar-positive);
+  box-shadow: 0 0 0 0 rgba(52, 223, 145, 0.5);
+  animation: pulse-dot 1.8s ease-out infinite;
+}
+
+.watch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.watch-card h3 {
+  margin-top: 0.4rem;
+  font-size: 1.55rem;
+}
+
+.watch-flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.watch-flow__step {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.watch-flow__step span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--ar-ink-950);
+  background: linear-gradient(135deg, var(--ar-cyan-300), var(--ar-gold-200));
+  font-family: var(--font-ui);
+  font-weight: 900;
+}
+
+.watch-flow__step strong {
+  display: block;
+  margin-top: 0.7rem;
+  color: var(--ar-white);
+  font-family: var(--font-ui);
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+.watch-flow__step p {
+  margin: 0.3rem 0 0;
+  font-size: 0.9rem;
+}
+
+.watch-news {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  background: rgba(8, 7, 12, 0.34);
+}
+
+.section-head.compact {
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.news-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.news-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.8rem;
+  align-items: start;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.7rem;
+}
+
+.news-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.news-item strong {
+  color: var(--ar-white);
+}
+
+.news-item p {
+  margin: 0.18rem 0 0;
+  font-size: 0.92rem;
+}
+
+.market-row-note {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .table-wrap {
   overflow-x: hidden;
   border: 1px solid var(--line);
@@ -1155,6 +1333,12 @@ tr:last-child td {
   to { translate: 0 520%; }
 }
 
+@keyframes pulse-dot {
+  0% { box-shadow: 0 0 0 0 rgba(52, 223, 145, 0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(52, 223, 145, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 223, 145, 0); }
+}
+
 @media (max-width: 52rem) {
   .hero {
     min-height: auto;
@@ -1162,6 +1346,9 @@ tr:last-child td {
 
   .hero__content,
   .detail-hero,
+  .market-watch__hero,
+  .watch-grid,
+  .watch-flow,
   .grid.two,
   .grid.three,
   .grid.cards {

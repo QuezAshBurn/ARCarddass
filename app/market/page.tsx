@@ -1,4 +1,5 @@
 import { MarketTable } from "@/components/MarketTable";
+import { MarketWatchExplainer } from "@/components/MarketWatchExplainer";
 import { getMarketSummary } from "@/lib/data/cards";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 import { ensureMarketPricesFresh } from "@/lib/server/market-price-cron";
@@ -44,6 +45,8 @@ export default async function MarketPage() {
           <p>{summary.biggestDecliners[0].version.weeklyChangePercent.toFixed(2)}% this update.</p>
         </div>
       </div>
+      <div style={{ height: 22 }} />
+      <MarketWatchExplainer cards={cards} lastMarketUpdate={summary.lastMarketUpdate} />
       <div style={{ height: 22 }} />
       <MarketTable cards={cards} />
     </section>

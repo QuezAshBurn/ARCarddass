@@ -7,6 +7,16 @@ type MarketTableProps = {
   limit?: number;
 };
 
+function getMovementStory(percent: number) {
+  const absolute = Math.abs(percent);
+
+  if (absolute < 0.01) return "Held: no fresh material evidence";
+  if (absolute < 1.5) return percent > 0 ? "Slight upward signal" : "Slight downward signal";
+  if (absolute < 7.5) return percent > 0 ? "Evidence-backed rise" : "Evidence-backed dip";
+
+  return percent > 0 ? "Capped strong rise" : "Capped strong dip";
+}
+
 export function MarketTable({ cards, limit }: MarketTableProps) {
   const visibleCards = typeof limit === "number" ? cards.slice(0, limit) : cards;
 
@@ -28,8 +38,7 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
         <tbody>
           {visibleCards.map((card) => {
             const primary = getPrimaryVersion(card);
-            const changeClass =
-              primary.weeklyChangePercent >= 0 ? "positive" : "negative";
+            const changeClass = primary.weeklyChangePercent >= 0 ? "positive" : "negative";
 
             return (
               <tr key={card.cardNumber}>
@@ -45,8 +54,12 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
                 <td data-label="Rarity">{card.rarity}</td>
                 <td data-label="Market price">{formatPeso(primary.currentPublishedPricePhp)}</td>
                 <td className={changeClass} data-label="Per update">
-                  {primary.weeklyChangePercent >= 0 ? "+" : ""}
-                  {primary.weeklyChangePercent.toFixed(2)}%
+                  <strong>
+                    {primary.weeklyChangePercent >= 0 ? "+" : ""}
+                    {primary.weeklyChangePercent.toFixed(2)}%
+                  </strong>
+                  <br />
+                  <span className="market-row-note">{getMovementStory(primary.weeklyChangePercent)}</span>
                 </td>
                 <td data-label="Demand">{primary.demandScore}/100</td>
                 <td data-label="Scarcity">{primary.scarcityScore}/100</td>

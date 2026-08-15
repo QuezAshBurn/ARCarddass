@@ -8,10 +8,57 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
-export default async function MarketPage() {
+type MarketPageProps = {
+  searchParams?: {
+    rarity?: string;
+    sort?: string;
+  };
+};
+
+function sortCards(cards: Awaited<ReturnType<typeof getCardsWithLivePrices>>, sort?: string) {
+  const sorted = [...cards];
+
+  switch (sort) {
+    case "collector-low":
+      return sorted.sort(
+        (a, b) =>
+          (a.versions[0].collectorPricePhp ?? Number.MAX_SAFE_INTEGER) -
+          (b.versions[0].collectorPricePhp ?? Number.MAX_SAFE_INTEGER)
+      );
+    case "market":
+      return sorted.sort(
+        (a, b) => b.versions[0].currentPublishedPricePhp - a.versions[0].currentPublishedPricePhp
+      );
+    case "gap":
+      return sorted.sort((a, b) => {
+        const aGap = Math.abs((a.versions[0].collectorPricePhp ?? a.versions[0].currentPublishedPricePhp) - a.versions[0].currentPublishedPricePhp);
+        const bGap = Math.abs((b.versions[0].collectorPricePhp ?? b.versions[0].currentPublishedPricePhp) - b.versions[0].currentPublishedPricePhp);
+        return bGap - aGap;
+      });
+    case "demand":
+      return sorted.sort((a, b) => b.versions[0].demandScore - a.versions[0].demandScore);
+    case "scarcity":
+      return sorted.sort((a, b) => b.versions[0].scarcityScore - a.versions[0].scarcityScore);
+    case "verified-sales":
+      return sorted.sort((a, b) => b.versions[0].verifiedSaleCount - a.versions[0].verifiedSaleCount);
+    case "collector-high":
+    default:
+      return sorted.sort(
+        (a, b) => (b.versions[0].collectorPricePhp ?? 0) - (a.versions[0].collectorPricePhp ?? 0)
+      );
+  }
+}
+
+export default async function MarketPage({ searchParams }: MarketPageProps) {
   await ensureMarketPricesFresh();
   const cards = await getCardsWithLivePrices();
-  const summary = getMarketSummary(cards);
+  const rarityFilter = searchParams?.rarity?.toUpperCase();
+  const filteredCards =
+    rarityFilter === "KR" || rarityFilter === "SKR"
+      ? cards.filter((card) => card.rarity === rarityFilter)
+      : cards;
+  const visibleCards = sortCards(filteredCards, searchParams?.sort);
+  const summary = getMarketSummary(visibleCards);
 
   return (
     <section className="shell section">
@@ -27,6 +74,26 @@ export default async function MarketPage() {
           </p>
         </div>
         <span className="pill">{summary.lastMarketUpdate}</span>
+      </div>
+      <div className="filters market-filters" aria-label="Market filters">
+        <a className={`filter-chip ${!rarityFilter ? "active" : ""}`} href="/market">
+          All premium
+        </a>
+        <a className={`filter-chip ${rarityFilter === "KR" ? "active" : ""}`} href="/market?rarity=KR">
+          King Rare / KR
+        </a>
+        <a className={`filter-chip ${rarityFilter === "SKR" ? "active" : ""}`} href="/market?rarity=SKR">
+          Secret KR / SKR
+        </a>
+        <a className="filter-chip" href="/market?sort=collector-high">
+          Collector high → low
+        </a>
+        <a className="filter-chip" href="/market?sort=verified-sales">
+          Most verified sales
+        </a>
+        <a className="filter-chip" href="/market?sort=gap">
+          Largest collector/index gap
+        </a>
       </div>
       <div className="grid three">
         <div className="content-card">
@@ -46,9 +113,9 @@ export default async function MarketPage() {
         </div>
       </div>
       <div style={{ height: 22 }} />
-      <MarketWatchExplainer cards={cards} lastMarketUpdate={summary.lastMarketUpdate} />
+      <MarketWatchExplainer cards={visibleCards} lastMarketUpdate={summary.lastMarketUpdate} />
       <div style={{ height: 22 }} />
-      <MarketTable cards={cards} />
+      <MarketTable cards={visibleCards} />
     </section>
   );
 }

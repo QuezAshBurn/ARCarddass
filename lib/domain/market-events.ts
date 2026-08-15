@@ -21,6 +21,7 @@ export const marketEventInputSchema = z.object({
   marketplaceTransactionId: z.string().min(1).optional().nullable(),
   sellerId: z.string().min(1).optional().nullable(),
   sellerName: z.string().min(1).optional().nullable(),
+  buyerId: z.string().min(1).optional().nullable(),
   eventType: z.string().refine(isMarketEventType, "Unsupported market event type"),
   eventAt: z.string().datetime(),
   currency: z.string().min(3).max(8),
@@ -45,6 +46,8 @@ export const marketEventInputSchema = z.object({
   comparabilityConfidence: z.number().min(0).max(100).optional().nullable(),
   evidenceConfidence: z.number().min(0).max(100).optional().nullable(),
   duplicateOf: z.string().uuid().optional().nullable(),
+  duplicateGroupId: z.string().min(1).optional().nullable(),
+  outlierReason: z.string().max(1000).optional().nullable(),
   notes: z.string().max(2000).optional().nullable()
 });
 

@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { CollectorConfidenceBadge } from "@/components/CollectorConfidenceBadge";
+import { CollectorPrice } from "@/components/CollectorPrice";
+import { PriceRange } from "@/components/PriceRange";
 import type { Card } from "@/lib/data/cards";
 import { formatMarketUpdateAt, formatPeso, getPrimaryVersion } from "@/lib/data/cards";
 
@@ -10,8 +13,8 @@ type MarketTableProps = {
 function getMovementStory(percent: number) {
   const absolute = Math.abs(percent);
 
-  if (absolute < 0.01) return "Held: no fresh material evidence";
-  if (absolute < 1.5) return percent > 0 ? "Slight upward signal" : "Slight downward signal";
+  if (absolute < 0.01) return "Held";
+  if (absolute < 1.5) return percent > 0 ? "Slight rise" : "Slight dip";
   if (absolute < 7.5) return percent > 0 ? "Evidence-backed rise" : "Evidence-backed dip";
 
   return percent > 0 ? "Capped strong rise" : "Capped strong dip";
@@ -27,10 +30,13 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
           <tr>
             <th>Card</th>
             <th>Rarity</th>
-            <th>Market price</th>
-            <th>Per update</th>
+            <th>Collector price</th>
+            <th>Market index</th>
+            <th>Verified sales</th>
+            <th>Reseller ask</th>
             <th>Demand</th>
             <th>Scarcity</th>
+            <th>Trend</th>
             <th>Confidence</th>
             <th>Updated</th>
           </tr>
@@ -52,8 +58,37 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
                   </Link>
                 </td>
                 <td data-label="Rarity">{card.rarity}</td>
-                <td data-label="Market price">{formatPeso(primary.currentPublishedPricePhp)}</td>
-                <td className={changeClass} data-label="Per update">
+                <td data-label="Collector price">
+                  <CollectorPrice value={primary.collectorPricePhp} />
+                </td>
+                <td data-label="Market index">
+                  <strong>{formatPeso(primary.currentPublishedPricePhp)}</strong>
+                  <br />
+                  <span className="market-row-note">Market Price</span>
+                </td>
+                <td data-label="Verified sales">
+                  <PriceRange
+                    low={primary.verifiedSaleLowPhp}
+                    high={primary.verifiedSaleHighPhp}
+                    count={primary.verifiedSaleCount}
+                    singularLabel="verified sale"
+                    pluralLabel="verified sales"
+                    emptyLabel="No verified sales"
+                  />
+                </td>
+                <td data-label="Reseller ask">
+                  <PriceRange
+                    low={primary.resellerAskLowPhp}
+                    high={primary.resellerAskHighPhp}
+                    count={primary.resellerAskCount}
+                    singularLabel="asking listing"
+                    pluralLabel="asking listings"
+                    emptyLabel="No active asks"
+                  />
+                </td>
+                <td data-label="Demand">{primary.demandScore}/100</td>
+                <td data-label="Scarcity">{primary.scarcityScore}/100</td>
+                <td className={changeClass} data-label="Trend">
                   <strong>
                     {primary.weeklyChangePercent >= 0 ? "+" : ""}
                     {primary.weeklyChangePercent.toFixed(2)}%
@@ -61,9 +96,9 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
                   <br />
                   <span className="market-row-note">{getMovementStory(primary.weeklyChangePercent)}</span>
                 </td>
-                <td data-label="Demand">{primary.demandScore}/100</td>
-                <td data-label="Scarcity">{primary.scarcityScore}/100</td>
-                <td data-label="Confidence">{primary.confidence}</td>
+                <td data-label="Confidence">
+                  <CollectorConfidenceBadge confidence={primary.collectorPriceConfidence} />
+                </td>
                 <td data-label="Updated">{formatMarketUpdateAt(primary.lastMarketUpdateAt) ?? "Pending"}</td>
               </tr>
             );

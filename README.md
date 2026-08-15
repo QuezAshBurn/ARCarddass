@@ -48,6 +48,7 @@ EBAY_CLIENT_SECRET=
 GET  /api/market/snapshot
 GET  /api/market/events
 GET  /api/market/monitor
+GET  /api/market/cards/[cardNumber]/pricing
 POST /api/admin/market/events
 ```
 
@@ -58,4 +59,4 @@ Authorization: Bearer <MARKET_EVENT_INGEST_SECRET>
 Idempotency-Key: <stable event key>
 ```
 
-The current implementation ships a data-driven public shell, deterministic pricing-rule code, tests, Supabase schema scaffolding, public market APIs, and a protected evidence-ingestion boundary. Live marketplace collectors remain pluggable so marketplace/API credentials stay server-side and source failures do not create false market signals.
+The current implementation ships a data-driven public shell, deterministic pricing-rule code, Collector Price calculations, tests, Supabase schema scaffolding, public market APIs, and a protected evidence-ingestion boundary. Live marketplace collectors remain pluggable so marketplace/API credentials stay server-side and source failures do not create false market signals.

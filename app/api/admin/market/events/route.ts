@@ -71,6 +71,7 @@ function buildInsertPayload(
     marketplace_transaction_id: event.marketplaceTransactionId ?? null,
     seller_id: event.sellerId ?? null,
     seller_name: event.sellerName ?? null,
+    buyer_id: event.buyerId ?? null,
     event_type: event.eventType,
     event_at: event.eventAt,
     discovered_at: event.discoveredAt,
@@ -96,8 +97,10 @@ function buildInsertPayload(
     comparability_confidence: event.comparabilityConfidence ?? null,
     evidence_confidence: event.evidenceConfidence ?? null,
     duplicate_of: event.duplicateOf ?? null,
+    duplicate_group_id: event.duplicateGroupId ?? null,
     duplicate_fingerprint: event.duplicateFingerprint,
     idempotency_key: idempotencyKey,
+    outlier_reason: event.outlierReason ?? null,
     notes: event.notes ?? null
   };
 }

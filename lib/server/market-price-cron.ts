@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { cards as staticCards } from "@/lib/data/cards";
+import { applyCollectorPricingToCards, cards as staticCards } from "@/lib/data/cards";
 import { getServiceSupabaseClient } from "@/lib/database/supabase";
 import { calculateMarketUpdateForVersion } from "@/lib/domain/market-updates";
 import { requireCronSecret } from "@/lib/http/cron";
@@ -7,6 +7,7 @@ import { methodologyVersion } from "@/config/pricing-rules";
 
 const manilaUtcOffsetMs = 8 * 60 * 60 * 1000;
 const halfDayMs = 12 * 60 * 60 * 1000;
+const staticCardsWithCollectorPricing = applyCollectorPricingToCards(staticCards);
 
 type MarketPriceUpdateOptions = {
   now?: Date;
@@ -97,7 +98,7 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
   const supabase = getServiceSupabaseClient();
 
   if (!supabase) {
-    const updates = staticCards.flatMap((card) =>
+    const updates = staticCardsWithCollectorPricing.flatMap((card) =>
       card.versions
         .filter((version) => version.pricingState === "LIVE")
         .map((version) => calculateMarketUpdateForVersion(card, version))
@@ -236,7 +237,7 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
 
   for (const dbVersion of versionRows) {
     const cardNumber = getCardNumber(dbVersion);
-    const staticCard = staticCards.find((card) => card.cardNumber === cardNumber);
+    const staticCard = staticCardsWithCollectorPricing.find((card) => card.cardNumber === cardNumber);
     const staticVersion = staticCard?.versions.find(
       (version) => version.versionCode === normalizeVersionCode(dbVersion.version_code)
     );
@@ -287,6 +288,20 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
           raw_movement_percent: update.result.calculatedMovementPercent,
           capped_movement_percent: update.result.calculatedMovementPercent,
           calculated_price_php: update.result.calculatedPricePhp,
+          collector_price_php: staticVersion.collectorPricePhp,
+          collector_price_confidence: staticVersion.collectorPriceConfidence,
+          verified_sale_low_php: staticVersion.verifiedSaleLowPhp,
+          verified_sale_median_php: staticVersion.verifiedSaleMedianPhp,
+          verified_sale_high_php: staticVersion.verifiedSaleHighPhp,
+          verified_sale_count: staticVersion.verifiedSaleCount,
+          reseller_ask_low_php: staticVersion.resellerAskLowPhp,
+          reseller_ask_median_php: staticVersion.resellerAskMedianPhp,
+          reseller_ask_high_php: staticVersion.resellerAskHighPhp,
+          reseller_ask_count: staticVersion.resellerAskCount,
+          quick_sale_price_php: staticVersion.quickSalePricePhp,
+          collector_tier: staticVersion.collectorTier,
+          collector_price_updated_at: staticVersion.collectorPriceUpdatedAt,
+          collector_pricing_rule_version: staticVersion.collectorPricingRuleVersion,
           published_price_php: update.nextPublishedPricePhp,
           confidence: staticVersion.confidence,
           methodology_version: methodologyVersion,
@@ -338,6 +353,20 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
       previous_published_price_php: update.basePublishedPricePhp,
       calculated_price_php: update.result.calculatedPricePhp,
       published_price_php: update.nextPublishedPricePhp,
+      collector_price_php: staticVersion.collectorPricePhp,
+      collector_price_confidence: staticVersion.collectorPriceConfidence,
+      verified_sale_low_php: staticVersion.verifiedSaleLowPhp,
+      verified_sale_median_php: staticVersion.verifiedSaleMedianPhp,
+      verified_sale_high_php: staticVersion.verifiedSaleHighPhp,
+      verified_sale_count: staticVersion.verifiedSaleCount,
+      reseller_ask_low_php: staticVersion.resellerAskLowPhp,
+      reseller_ask_median_php: staticVersion.resellerAskMedianPhp,
+      reseller_ask_high_php: staticVersion.resellerAskHighPhp,
+      reseller_ask_count: staticVersion.resellerAskCount,
+      quick_sale_price_php: staticVersion.quickSalePricePhp,
+      collector_tier: staticVersion.collectorTier,
+      collector_price_updated_at: staticVersion.collectorPriceUpdatedAt,
+      collector_pricing_rule_version: staticVersion.collectorPricingRuleVersion,
       confidence: staticVersion.confidence.toUpperCase(),
       last_evidence_check_at: now.toISOString(),
       last_calculated_at: now.toISOString(),

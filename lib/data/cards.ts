@@ -1,3 +1,10 @@
+import {
+  calculateCollectorPrice,
+  type CollectorPriceConfidence,
+  type CollectorPricingEvidence,
+  type CollectorTier
+} from "@/lib/domain/collector-pricing";
+
 export type PricingState =
   | "UNINITIALIZED"
   | "INITIALIZED"
@@ -20,6 +27,20 @@ export type CardVersion = {
   weeklyChangePhp: number;
   weeklyChangePercent: number;
   lastMarketUpdateAt?: string | null;
+  collectorPricePhp: number | null;
+  collectorPriceConfidence: CollectorPriceConfidence;
+  verifiedSaleLowPhp: number | null;
+  verifiedSaleMedianPhp: number | null;
+  verifiedSaleHighPhp: number | null;
+  verifiedSaleCount: number;
+  resellerAskLowPhp: number | null;
+  resellerAskMedianPhp: number | null;
+  resellerAskHighPhp: number | null;
+  resellerAskCount: number;
+  quickSalePricePhp: number | null;
+  collectorTier: CollectorTier | null;
+  collectorPriceUpdatedAt: string | null;
+  collectorPricingRuleVersion: string;
   demandScore: number;
   scarcityScore: number;
   confidence: "High" | "Moderate" | "Low";
@@ -108,6 +129,20 @@ function makeVersions(
       highestVerifiedSalePhp: Math.round(jp * 1.02),
       weeklyChangePhp: changePhp,
       weeklyChangePercent: changePercent * 100,
+      collectorPricePhp: null,
+      collectorPriceConfidence: "INSUFFICIENT_DATA",
+      verifiedSaleLowPhp: null,
+      verifiedSaleMedianPhp: null,
+      verifiedSaleHighPhp: null,
+      verifiedSaleCount: 0,
+      resellerAskLowPhp: null,
+      resellerAskMedianPhp: null,
+      resellerAskHighPhp: null,
+      resellerAskCount: 0,
+      quickSalePricePhp: null,
+      collectorTier: null,
+      collectorPriceUpdatedAt: null,
+      collectorPricingRuleVersion: "1.0.0",
       demandScore,
       scarcityScore,
       confidence,
@@ -128,6 +163,20 @@ function makeVersions(
       highestVerifiedSalePhp: Math.round(en * 1.01),
       weeklyChangePhp: Math.round(changePhp * 0.9),
       weeklyChangePercent: changePercent * 100,
+      collectorPricePhp: null,
+      collectorPriceConfidence: "INSUFFICIENT_DATA",
+      verifiedSaleLowPhp: null,
+      verifiedSaleMedianPhp: null,
+      verifiedSaleHighPhp: null,
+      verifiedSaleCount: 0,
+      resellerAskLowPhp: null,
+      resellerAskMedianPhp: null,
+      resellerAskHighPhp: null,
+      resellerAskCount: 0,
+      quickSalePricePhp: null,
+      collectorTier: null,
+      collectorPriceUpdatedAt: null,
+      collectorPricingRuleVersion: "1.0.0",
       demandScore: Math.max(0, demandScore - 3),
       scarcityScore,
       confidence,
@@ -148,6 +197,20 @@ function makeVersions(
       highestVerifiedSalePhp: Math.round(hk * 1.01),
       weeklyChangePhp: Math.round(changePhp * 0.85),
       weeklyChangePercent: changePercent * 100,
+      collectorPricePhp: null,
+      collectorPriceConfidence: "INSUFFICIENT_DATA",
+      verifiedSaleLowPhp: null,
+      verifiedSaleMedianPhp: null,
+      verifiedSaleHighPhp: null,
+      verifiedSaleCount: 0,
+      resellerAskLowPhp: null,
+      resellerAskMedianPhp: null,
+      resellerAskHighPhp: null,
+      resellerAskCount: 0,
+      quickSalePricePhp: null,
+      collectorTier: null,
+      collectorPriceUpdatedAt: null,
+      collectorPricingRuleVersion: "1.0.0",
       demandScore: Math.max(0, demandScore - 5),
       scarcityScore: Math.max(0, scarcityScore - 2),
       confidence,
@@ -384,6 +447,72 @@ export const evidenceRecords: EvidenceRecord[] = [
     watchers: 2
   }
 ];
+
+function mapEvidenceRecordToCollectorEvidence(record: EvidenceRecord): CollectorPricingEvidence {
+  const isVerifiedSale = record.status === "sold" && record.evidenceType === "completed_sale";
+  const isActiveListing = record.status === "active" && record.evidenceType === "active_ask";
+
+  return {
+    id: record.id,
+    cardNumber: record.cardNumber,
+    version: record.versionCode,
+    evidenceType: isVerifiedSale ? "VERIFIED_SALE" : isActiveListing ? "ACTIVE_LISTING" : "OTHER",
+    pricePhp: record.phpPrice,
+    condition: "NEAR_MINT",
+    sellerId: `${record.marketplace}:${record.id}`,
+    buyerId: isVerifiedSale ? `buyer:${record.id}` : null,
+    platform: record.marketplace,
+    eventAt: `${record.date}T00:00:00.000Z`,
+    status:
+      record.status === "review" || record.affected === "held-review"
+        ? "REVIEW_REQUIRED"
+        : record.confidence >= 75
+          ? "ACCEPTED"
+          : record.confidence >= 50
+            ? "DISCOUNTED"
+            : "QUARANTINED",
+    conditionComparability: 1,
+    independenceConfidence: record.confidence
+  };
+}
+
+export function applyCollectorPricingToCards(cardList: Card[]): Card[] {
+  const collectorEvidence = evidenceRecords.map(mapEvidenceRecordToCollectorEvidence);
+
+  return cardList.map((card) => ({
+    ...card,
+    versions: card.versions.map((version) => {
+      const versionEvidence = collectorEvidence.filter(
+        (evidence) =>
+          evidence.cardNumber === card.cardNumber &&
+          evidence.version === version.versionCode
+      );
+      const result = calculateCollectorPrice({
+        evidence: versionEvidence,
+        demandScore: version.demandScore,
+        scarcityScore: version.scarcityScore
+      });
+
+      return {
+        ...version,
+        collectorPricePhp: result.collectorPricePhp,
+        collectorPriceConfidence: result.collectorPriceConfidence,
+        verifiedSaleLowPhp: result.verifiedSales.lowPhp,
+        verifiedSaleMedianPhp: result.verifiedSales.medianPhp,
+        verifiedSaleHighPhp: result.verifiedSales.highPhp,
+        verifiedSaleCount: result.verifiedSales.count,
+        resellerAskLowPhp: result.resellerAsks.lowPhp,
+        resellerAskMedianPhp: result.resellerAsks.medianPhp,
+        resellerAskHighPhp: result.resellerAsks.highPhp,
+        resellerAskCount: result.resellerAsks.count,
+        quickSalePricePhp: result.quickSalePricePhp,
+        collectorTier: result.collectorTier,
+        collectorPriceUpdatedAt: result.collectorPriceUpdatedAt,
+        collectorPricingRuleVersion: result.collectorPricingRuleVersion
+      };
+    })
+  }));
+}
 
 export function formatPeso(value: number): string {
   return new Intl.NumberFormat("en-PH", {

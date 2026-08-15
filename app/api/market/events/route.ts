@@ -28,21 +28,34 @@ export async function GET(request: Request) {
 
   const filters = {
     card: url.searchParams.get("card"),
+    cardNumber: url.searchParams.get("cardNumber"),
     version: url.searchParams.get("version"),
     since: url.searchParams.get("since"),
+    from: url.searchParams.get("from"),
     until: url.searchParams.get("until"),
+    to: url.searchParams.get("to"),
     marketplace: url.searchParams.get("marketplace"),
+    platform: url.searchParams.get("platform"),
     eventType: url.searchParams.get("eventType"),
-    validationStatus: url.searchParams.get("validationStatus")
+    evidenceType: url.searchParams.get("evidenceType"),
+    validationStatus: url.searchParams.get("validationStatus"),
+    status: url.searchParams.get("status")
   };
 
-  if (filters.card) query = query.eq("card_code", filters.card);
+  const cardFilter = filters.cardNumber ?? filters.card;
+  const sinceFilter = filters.from ?? filters.since;
+  const untilFilter = filters.to ?? filters.until;
+  const marketplaceFilter = filters.platform ?? filters.marketplace;
+  const eventTypeFilter = filters.evidenceType ?? filters.eventType;
+  const statusFilter = filters.status ?? filters.validationStatus;
+
+  if (cardFilter) query = query.eq("card_code", cardFilter);
   if (filters.version) query = query.eq("version", filters.version.toUpperCase());
-  if (filters.since) query = query.gte("event_at", filters.since);
-  if (filters.until) query = query.lte("event_at", filters.until);
-  if (filters.marketplace) query = query.eq("marketplace", filters.marketplace);
-  if (filters.eventType) query = query.eq("event_type", filters.eventType);
-  if (filters.validationStatus) query = query.eq("validation_status", filters.validationStatus);
+  if (sinceFilter) query = query.gte("event_at", sinceFilter);
+  if (untilFilter) query = query.lte("event_at", untilFilter);
+  if (marketplaceFilter) query = query.eq("marketplace", marketplaceFilter);
+  if (eventTypeFilter) query = query.eq("event_type", eventTypeFilter);
+  if (statusFilter) query = query.eq("validation_status", statusFilter);
 
   const { data, error } = await query;
 

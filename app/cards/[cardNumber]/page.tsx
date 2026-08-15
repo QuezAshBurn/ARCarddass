@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { CardArt } from "@/components/CardArt";
+import { CollectorConfidenceBadge } from "@/components/CollectorConfidenceBadge";
+import { CollectorPrice } from "@/components/CollectorPrice";
+import { PriceRelationship } from "@/components/PriceRelationship";
 import { PriceSparkline } from "@/components/PriceSparkline";
+import { PricingEvidenceSummary } from "@/components/PricingEvidenceSummary";
 import { cards as staticCards, evidenceRecords, formatPeso, getPrimaryVersion } from "@/lib/data/cards";
 import { getCardWithLivePrices } from "@/lib/data/live-cards";
 
@@ -48,20 +52,61 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
           <p>{card.summary}</p>
           <div className="grid three">
             <div className="stat-card">
-              <span>Current market price</span>
-              <strong>{formatPeso(primary.currentPublishedPricePhp)}</strong>
-            </div>
-            <div className="stat-card">
-              <span>Per-update movement</span>
-              <strong className={primary.weeklyChangePercent >= 0 ? "positive" : "negative"}>
-                {primary.weeklyChangePercent >= 0 ? "+" : ""}
-                {primary.weeklyChangePercent.toFixed(2)}%
+              <span>Collector Price</span>
+              <strong>
+                <CollectorPrice value={primary.collectorPricePhp} compact />
               </strong>
             </div>
             <div className="stat-card">
-              <span>Confidence</span>
-              <strong>{primary.confidence}</strong>
+              <span>Market Index</span>
+              <strong>{formatPeso(primary.currentPublishedPricePhp)}</strong>
             </div>
+            <div className="stat-card">
+              <span>Collector confidence</span>
+              <strong>
+                <CollectorConfidenceBadge confidence={primary.collectorPriceConfidence} />
+              </strong>
+            </div>
+          </div>
+          <p className="relationship-note">
+            <PriceRelationship
+              collectorPrice={primary.collectorPricePhp}
+              marketPrice={primary.currentPublishedPricePhp}
+            />
+          </p>
+        </div>
+      </section>
+
+      <section className="shell section">
+        <div className="content-card pricing-summary-card">
+          <span className="label">Collector pricing summary</span>
+          <h2>Collector Price vs Market Index</h2>
+          <p>
+            Collector Price estimates what a knowledgeable collector may reasonably
+            pay based mainly on validated comparable sales. Market Index is the
+            broader AR Carddass market price.
+          </p>
+          <div className="pricing-summary-grid">
+            <span>Collector Price</span>
+            <strong>{primary.collectorPricePhp ? formatPeso(primary.collectorPricePhp) : "Insufficient data"}</strong>
+            <span>Fair Collector Range</span>
+            <strong>
+              {primary.verifiedSaleLowPhp && primary.verifiedSaleHighPhp
+                ? `${formatPeso(primary.verifiedSaleLowPhp)}–${formatPeso(primary.verifiedSaleHighPhp)}`
+                : "Insufficient verified sales"}
+            </strong>
+            <span>Market Index</span>
+            <strong>{formatPeso(primary.currentPublishedPricePhp)}</strong>
+            <span>Quick-Sale Estimate</span>
+            <strong>{primary.quickSalePricePhp ? formatPeso(primary.quickSalePricePhp) : "Unavailable"}</strong>
+            <span>Reseller Ask Range</span>
+            <strong>
+              {primary.resellerAskLowPhp && primary.resellerAskHighPhp
+                ? `${formatPeso(primary.resellerAskLowPhp)}–${formatPeso(primary.resellerAskHighPhp)}`
+                : "No active asks"}
+            </strong>
+            <span>Collector Tier</span>
+            <strong>{primary.collectorTier ?? "Unavailable"}</strong>
           </div>
         </div>
       </section>
@@ -79,6 +124,23 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
           <div className="stat-card">
             <span>Highest Verified Sale</span>
             <strong>{formatPeso(primary.highestVerifiedSalePhp)}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="shell section">
+        <div className="grid two">
+          <div className="content-card">
+            <PricingEvidenceSummary version={primary} />
+          </div>
+          <div className="content-card">
+            <span className="label">Low-listing guardrail</span>
+            <h2>Asks are not sales.</h2>
+            <p>
+              A low active listing can appear in the feed, but it is not treated as
+              a market sale until it is validated as a completed transaction. This
+              prevents one visible ask from looking like a confirmed market crash.
+            </p>
           </div>
         </div>
       </section>
@@ -126,7 +188,8 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
               <tr>
                 <th>Version</th>
                 <th>Identity</th>
-                <th>Market price</th>
+                <th>Collector price</th>
+                <th>Market index</th>
                 <th>Relationship</th>
                 <th>Evidence</th>
                 <th>State</th>
@@ -141,7 +204,10 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
                     <br />
                     <span className="muted">{version.verificationStatus}</span>
                   </td>
-                  <td data-label="Market price">{formatPeso(version.currentPublishedPricePhp)}</td>
+                  <td data-label="Collector price">
+                    <CollectorPrice value={version.collectorPricePhp} compact />
+                  </td>
+                  <td data-label="Market index">{formatPeso(version.currentPublishedPricePhp)}</td>
                   <td data-label="Relationship">{version.versionRelationship}</td>
                   <td data-label="Evidence">
                     {version.directEvidence} direct &middot; {version.modeledEvidence} modeled

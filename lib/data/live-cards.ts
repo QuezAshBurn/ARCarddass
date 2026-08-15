@@ -1,5 +1,5 @@
 import type { Card } from "@/lib/data/cards";
-import { cards } from "@/lib/data/cards";
+import { applyCollectorPricingToCards, cards } from "@/lib/data/cards";
 import { getPublicSupabaseClient } from "@/lib/database/supabase";
 
 type CardVersionPriceRow = {
@@ -16,6 +16,25 @@ type PriceSnapshotRow = {
   calculated_movement_percent: number | string | null;
   published_price_php: number | string | null;
   created_at: string | null;
+};
+
+type MarketStateCollectorRow = {
+  card_code: string;
+  version: string;
+  collector_price_php: number | string | null;
+  collector_price_confidence: string | null;
+  verified_sale_low_php: number | string | null;
+  verified_sale_median_php: number | string | null;
+  verified_sale_high_php: number | string | null;
+  verified_sale_count: number | null;
+  reseller_ask_low_php: number | string | null;
+  reseller_ask_median_php: number | string | null;
+  reseller_ask_high_php: number | string | null;
+  reseller_ask_count: number | null;
+  quick_sale_price_php: number | string | null;
+  collector_tier: string | null;
+  collector_price_updated_at: string | null;
+  collector_pricing_rule_version: string | null;
 };
 
 function getCardNumber(row: CardVersionPriceRow): string | undefined {
@@ -48,9 +67,15 @@ function calculateChangePhpFromMovement(pricePhp: number, movementPercent: numbe
   return Math.round(pricePhp - pricePhp / divisor);
 }
 
+function numberOrNull(value: number | string | null | undefined) {
+  const numeric = Number(value);
+
+  return Number.isFinite(numeric) ? Math.round(numeric) : null;
+}
+
 export async function getCardsWithLivePrices(): Promise<Card[]> {
   const supabase = getPublicSupabaseClient();
-  const liveCards = copyStaticCards();
+  const liveCards = applyCollectorPricingToCards(copyStaticCards());
 
   if (!supabase) {
     return liveCards;
@@ -71,6 +96,19 @@ export async function getCardsWithLivePrices(): Promise<Card[]> {
   const rows = data as CardVersionPriceRow[];
   const versionIds = rows.map((row) => row.id).filter(Boolean);
   const latestSnapshotsByVersionId = new Map<string, PriceSnapshotRow>();
+  const collectorStateByCardAndVersion = new Map<string, MarketStateCollectorRow>();
+
+  const { data: marketStates, error: marketStateError } = await supabase
+    .from("market_states")
+    .select(
+      "card_code,version,collector_price_php,collector_price_confidence,verified_sale_low_php,verified_sale_median_php,verified_sale_high_php,verified_sale_count,reseller_ask_low_php,reseller_ask_median_php,reseller_ask_high_php,reseller_ask_count,quick_sale_price_php,collector_tier,collector_price_updated_at,collector_pricing_rule_version"
+    );
+
+  if (!marketStateError) {
+    for (const state of (marketStates ?? []) as MarketStateCollectorRow[]) {
+      collectorStateByCardAndVersion.set(`${state.card_code}:${normalizeVersionCode(state.version)}`, state);
+    }
+  }
 
   if (versionIds.length > 0) {
     const { data: snapshots, error: snapshotError } = await supabase
@@ -117,6 +155,37 @@ export async function getCardsWithLivePrices(): Promise<Card[]> {
       const previousPrice = version.currentPublishedPricePhp;
       version.weeklyChangePhp = version.currentPublishedPricePhp - previousPrice;
       version.weeklyChangePercent = 0;
+    }
+
+    const collectorState = collectorStateByCardAndVersion.get(`${card.cardNumber}:${version.versionCode}`);
+
+    if (collectorState) {
+      version.collectorPricePhp = numberOrNull(collectorState.collector_price_php);
+      version.collectorPriceConfidence =
+        collectorState.collector_price_confidence === "HIGH" ||
+        collectorState.collector_price_confidence === "MEDIUM" ||
+        collectorState.collector_price_confidence === "LOW"
+          ? collectorState.collector_price_confidence
+          : "INSUFFICIENT_DATA";
+      version.verifiedSaleLowPhp = numberOrNull(collectorState.verified_sale_low_php);
+      version.verifiedSaleMedianPhp = numberOrNull(collectorState.verified_sale_median_php);
+      version.verifiedSaleHighPhp = numberOrNull(collectorState.verified_sale_high_php);
+      version.verifiedSaleCount = collectorState.verified_sale_count ?? 0;
+      version.resellerAskLowPhp = numberOrNull(collectorState.reseller_ask_low_php);
+      version.resellerAskMedianPhp = numberOrNull(collectorState.reseller_ask_median_php);
+      version.resellerAskHighPhp = numberOrNull(collectorState.reseller_ask_high_php);
+      version.resellerAskCount = collectorState.reseller_ask_count ?? 0;
+      version.quickSalePricePhp = numberOrNull(collectorState.quick_sale_price_php);
+      version.collectorTier =
+        collectorState.collector_tier === "S" ||
+        collectorState.collector_tier === "A" ||
+        collectorState.collector_tier === "B" ||
+        collectorState.collector_tier === "C"
+          ? collectorState.collector_tier
+          : null;
+      version.collectorPriceUpdatedAt = collectorState.collector_price_updated_at;
+      version.collectorPricingRuleVersion =
+        collectorState.collector_pricing_rule_version ?? version.collectorPricingRuleVersion;
     }
 
     if (version.versionCode === "JP") {

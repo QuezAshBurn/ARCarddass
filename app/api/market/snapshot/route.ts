@@ -29,6 +29,20 @@ type MarketStateRow = {
   previous_published_price_php: number | string;
   calculated_price_php: number | string;
   published_price_php: number | string;
+  collector_price_php: number | string | null;
+  collector_price_confidence: string | null;
+  verified_sale_low_php: number | string | null;
+  verified_sale_median_php: number | string | null;
+  verified_sale_high_php: number | string | null;
+  verified_sale_count: number | null;
+  reseller_ask_low_php: number | string | null;
+  reseller_ask_median_php: number | string | null;
+  reseller_ask_high_php: number | string | null;
+  reseller_ask_count: number | null;
+  quick_sale_price_php: number | string | null;
+  collector_tier: string | null;
+  collector_price_updated_at: string | null;
+  collector_pricing_rule_version: string | null;
   active_override_price_php: number | string | null;
   active_override_reason: string | null;
   override_starts_at: string | null;
@@ -86,7 +100,7 @@ async function getMarketStates() {
   const { data, error } = await supabase
     .from("market_states")
     .select(
-      "id,card_code,card_name,rarity,version,initial_reference_price_php,previous_published_price_php,calculated_price_php,published_price_php,active_override_price_php,active_override_reason,override_starts_at,override_expires_at,confidence,last_material_event_at,last_calculated_at,last_published_at,updated_at"
+      "id,card_code,card_name,rarity,version,initial_reference_price_php,previous_published_price_php,calculated_price_php,published_price_php,collector_price_php,collector_price_confidence,verified_sale_low_php,verified_sale_median_php,verified_sale_high_php,verified_sale_count,reseller_ask_low_php,reseller_ask_median_php,reseller_ask_high_php,reseller_ask_count,quick_sale_price_php,collector_tier,collector_price_updated_at,collector_pricing_rule_version,active_override_price_php,active_override_reason,override_starts_at,override_expires_at,confidence,last_material_event_at,last_calculated_at,last_published_at,updated_at"
     )
     .order("card_code", { ascending: true });
 
@@ -114,6 +128,25 @@ export async function GET() {
         previousPublishedPrice: asNumber(state.previous_published_price_php),
         calculatedPrice: asNumber(state.calculated_price_php),
         publishedPrice: asNumber(state.published_price_php),
+        marketPricePhp: asNumber(state.published_price_php),
+        collectorPricePhp: state.collector_price_php === null ? null : asNumber(state.collector_price_php),
+        collectorPriceConfidence: state.collector_price_confidence ?? "INSUFFICIENT_DATA",
+        verifiedSales: {
+          lowPhp: state.verified_sale_low_php === null ? null : asNumber(state.verified_sale_low_php),
+          medianPhp: state.verified_sale_median_php === null ? null : asNumber(state.verified_sale_median_php),
+          highPhp: state.verified_sale_high_php === null ? null : asNumber(state.verified_sale_high_php),
+          count: state.verified_sale_count ?? 0
+        },
+        resellerAsks: {
+          lowPhp: state.reseller_ask_low_php === null ? null : asNumber(state.reseller_ask_low_php),
+          medianPhp: state.reseller_ask_median_php === null ? null : asNumber(state.reseller_ask_median_php),
+          highPhp: state.reseller_ask_high_php === null ? null : asNumber(state.reseller_ask_high_php),
+          count: state.reseller_ask_count ?? 0
+        },
+        quickSalePricePhp: state.quick_sale_price_php === null ? null : asNumber(state.quick_sale_price_php),
+        collectorTier: state.collector_tier,
+        collectorPriceUpdatedAt: state.collector_price_updated_at,
+        collectorPricingRuleVersion: state.collector_pricing_rule_version,
         sevenDayMovementPercent: 0,
         confidence: state.confidence,
         activeOverride: state.active_override_price_php
@@ -158,6 +191,25 @@ export async function GET() {
         previousPublishedPrice,
         calculatedPrice: asNumber(snapshot?.calculated_price_php, publishedPrice),
         publishedPrice,
+        marketPricePhp: publishedPrice,
+        collectorPricePhp: version.collectorPricePhp,
+        collectorPriceConfidence: version.collectorPriceConfidence,
+        verifiedSales: {
+          lowPhp: version.verifiedSaleLowPhp,
+          medianPhp: version.verifiedSaleMedianPhp,
+          highPhp: version.verifiedSaleHighPhp,
+          count: version.verifiedSaleCount
+        },
+        resellerAsks: {
+          lowPhp: version.resellerAskLowPhp,
+          medianPhp: version.resellerAskMedianPhp,
+          highPhp: version.resellerAskHighPhp,
+          count: version.resellerAskCount
+        },
+        quickSalePricePhp: version.quickSalePricePhp,
+        collectorTier: version.collectorTier,
+        collectorPriceUpdatedAt: version.collectorPriceUpdatedAt,
+        collectorPricingRuleVersion: version.collectorPricingRuleVersion,
         sevenDayMovementPercent: version.weeklyChangePercent,
         confidence: version.confidence.toUpperCase(),
         activeOverride: null,

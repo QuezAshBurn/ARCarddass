@@ -66,6 +66,30 @@ Cheap played or damaged cards may inform supply/liquidity, but they do not direc
 - `GET /api/market/snapshot` returns authoritative public market state.
 - `GET /api/market/events` returns public evidence history with filters.
 - `GET /api/market/monitor` returns market monitor health.
+- `GET /api/market/cards/{cardNumber}/pricing` returns version-level Market Index and Collector Price details for one card.
+
+## Collector Price
+
+Collector Price is separate from Market Price / Market Index.
+
+Collector Price estimates what a knowledgeable collector may reasonably pay today for a comparable raw Near Mint copy. It prioritizes:
+
+1. accepted verified sales;
+2. comparable condition;
+3. comparable language/version;
+4. recency;
+5. independent buyers/sellers;
+6. market breadth.
+
+Active reseller asking prices are shown publicly, but they do not directly set Collector Price.
+
+If no accepted comparable verified sale exists, Collector Price is `null` and the UI shows:
+
+```text
+Insufficient data
+```
+
+It must not silently fall back to Market Index.
 
 ## Admin API
 

@@ -1,0 +1,108 @@
+{
+  "pricingRuleVersion": "1.0.0",
+  "currency": "PHP",
+  "signalWindowsDays": {
+    "searchDemand": 7,
+    "watcherEffect": 7,
+    "cartEffect": 3,
+    "unsoldAskingPriceMomentum": 30
+  },
+  "movementCaps": {
+    "noVerifiedSale": 0.015,
+    "oneIndependentVerifiedSale": 0.075,
+    "multipleIndependentVerifiedSales": 0.12
+  },
+  "kpiWeights": {
+    "verifiedSalesActivity": 0.18,
+    "salePriceRelativeToPublished": 0.17,
+    "transactionVelocity": 0.08,
+    "bidActivity": 0.07,
+    "offerActivity": 0.05,
+    "cartActivity": 0.05,
+    "watcherGrowth": 0.08,
+    "searchDemand": 0.07,
+    "activeUniqueSupply": 0.08,
+    "sellerBreadth": 0.05,
+    "marketplaceBreadth": 0.04,
+    "scarcity": 0.08,
+    "priceReductions": 0.04,
+    "askingPriceMomentum": 0.04,
+    "conditionComparability": 0.02
+  },
+  "legacyKpiWeights": {
+    "transaction": 0.35,
+    "buyerIntent": 0.2,
+    "searchDemand": 0.15,
+    "scarcity": 0.15,
+    "priceMomentum": 0.1,
+    "marketBreadth": 0.05
+  },
+  "eventTypes": [
+    "VERIFIED_SALE",
+    "ACTIVE_LISTING",
+    "NEW_LISTING",
+    "PRICE_REDUCTION",
+    "BID_ACTIVITY",
+    "WATCHER_DELTA",
+    "CART_DELTA",
+    "OFFER_ACTIVITY",
+    "SUPPLY_CHANGE",
+    "LISTING_ENDED",
+    "LISTING_RESERVED",
+    "VERSION_CONFIRMED",
+    "OUTLIER_TRANSACTION",
+    "SEARCH_DEMAND_CHANGE"
+  ],
+  "validationStatuses": [
+    "ACCEPTED",
+    "DISCOUNTED",
+    "QUARANTINED",
+    "REVIEW_REQUIRED",
+    "REJECTED"
+  ],
+  "conditionCategories": [
+    "MINT",
+    "NEAR_MINT",
+    "LIGHT_PLAY",
+    "MODERATE_PLAY",
+    "HEAVY_PLAY",
+    "DAMAGED",
+    "UNKNOWN"
+  ],
+  "conditionComparability": {
+    "MINT": 1,
+    "NEAR_MINT": 1,
+    "LIGHT_PLAY": 0.72,
+    "MODERATE_PLAY": 0.45,
+    "HEAVY_PLAY": 0.25,
+    "DAMAGED": 0.12,
+    "UNKNOWN": 0.35
+  },
+  "versionComparability": {
+    "JP": {
+      "JP": 1,
+      "EN": 0.9,
+      "HK": 0.85
+    },
+    "EN": {
+      "JP": 1.1111111111,
+      "EN": 1,
+      "HK": 0.9444444444
+    },
+    "HK": {
+      "JP": 1.1764705882,
+      "EN": 1.0588235294,
+      "HK": 1
+    }
+  },
+  "outlierThresholds": {
+    "reviewRequiredRelativeToPublished": 2,
+    "reviewRequiredRelativeToMedian": 1.75
+  },
+  "confidenceThresholds": {
+    "autoAccept": 90,
+    "acceptModerate": 75,
+    "storeExclude": 50,
+    "reviewRequiredBelow": 60
+  }
+}

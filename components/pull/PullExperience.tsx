@@ -11,10 +11,8 @@ type PullExperienceProps = {
 };
 
 const PACK_OUTCOMES = [
-  { wantedCount: 3, kingRareCount: 0, weight: 60 },
-  { wantedCount: 2, kingRareCount: 1, weight: 25 },
-  { wantedCount: 1, kingRareCount: 2, weight: 12 },
-  { wantedCount: 0, kingRareCount: 3, weight: 3 }
+  { wantedCount: 3, kingRareCount: 0, weight: 97 },
+  { wantedCount: 2, kingRareCount: 1, weight: 3 }
 ] as const;
 
 function shuffleCards(cardPool: Card[]) {
@@ -117,8 +115,8 @@ export function PullExperience({ cards }: PullExperienceProps) {
         </Link>
       </div>
       <p className="muted">
-        Random 3-card reveal: 60% three Wanted cards, 25% two Wanted plus one King
-        Rare/SKR, 12% one Wanted plus two King Rare/SKR, and a 3% full King Rare/SKR hit.
+        Random 3-card reveal: 97% three Wanted cards. A 3% hit contains two Wanted
+        cards and one random King Rare or Secret King Rare.
       </p>
       {!canReveal && (
         <p className="muted">

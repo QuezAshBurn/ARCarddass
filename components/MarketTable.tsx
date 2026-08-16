@@ -65,6 +65,8 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
             const primary = getPrimaryVersion(card);
             const marketRange = getMarketRange(primary);
             const changeClass = primary.weeklyChangePercent >= 0 ? "positive" : "negative";
+            const formattedUpdate = formatMarketUpdateAt(primary.lastMarketUpdateAt);
+            const [updatedDate, updatedTime] = formattedUpdate?.split(" ") ?? ["Pending", ""];
 
             return (
               <Fragment key={card.cardNumber}>
@@ -130,7 +132,10 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
                   <td className="market-table__confidence" data-label="Confidence">
                     <CollectorConfidenceBadge confidence={primary.collectorPriceConfidence} />
                   </td>
-                  <td className="market-table__updated" data-label="Updated">{formatMarketUpdateAt(primary.lastMarketUpdateAt) ?? "Pending"}</td>
+                  <td className="market-table__updated" data-label="Updated">
+                    <span>{updatedDate}</span>
+                    {updatedTime && <span>{updatedTime}</span>}
+                  </td>
                 </tr>
                 <tr className="market-explain-row">
                   <td colSpan={13}>

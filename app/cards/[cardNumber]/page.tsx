@@ -3,9 +3,10 @@ import { CardArt } from "@/components/CardArt";
 import { CollectorConfidenceBadge } from "@/components/CollectorConfidenceBadge";
 import { CollectorPrice } from "@/components/CollectorPrice";
 import { PriceRelationship } from "@/components/PriceRelationship";
+import { PriceMovementExplanation } from "@/components/PriceMovementExplanation";
 import { PriceSparkline } from "@/components/PriceSparkline";
 import { PricingEvidenceSummary } from "@/components/PricingEvidenceSummary";
-import { cards as staticCards, evidenceRecords, formatPeso, getPrimaryVersion } from "@/lib/data/cards";
+import { cards as staticCards, evidenceRecords, formatPeso, getMarketRange, getPrimaryVersion } from "@/lib/data/cards";
 import { getCardWithLivePrices } from "@/lib/data/live-cards";
 
 type CardDetailPageProps = {
@@ -29,6 +30,8 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
 
   const primary = getPrimaryVersion(card);
   const records = evidenceRecords.filter((record) => record.cardNumber === card.cardNumber);
+  const isWantedResearch = card.productLine === "Wanted";
+  const marketRange = getMarketRange(primary);
 
   return (
     <>
@@ -46,7 +49,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
         </div>
         <div className="content-card">
           <span className="eyebrow">
-            {card.formationSet} &middot; {card.rarity} &middot; {card.cardNumber}
+            {card.productLine} &middot; {card.formationSet} &middot; {card.rarity} &middot; {card.cardNumber}
           </span>
           <h1>{card.characterName}</h1>
           <p>{card.summary}</p>
@@ -58,7 +61,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
               </strong>
             </div>
             <div className="stat-card">
-              <span>Market Index</span>
+              <span>{isWantedResearch ? "Research High Ref" : "Market Index"}</span>
               <strong>{formatPeso(primary.currentPublishedPricePhp)}</strong>
             </div>
             <div className="stat-card">
@@ -82,9 +85,9 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
           <span className="label">Collector pricing summary</span>
           <h2>Collector Price vs Market Index</h2>
           <p>
-            Collector Price estimates what a knowledgeable collector may reasonably
-            pay based mainly on validated comparable sales. Market Index is the
-            broader AR Carddass market price.
+            {isWantedResearch
+              ? "Wanted pricing is currently a research-high reference layer. It shows the highest useful public reference we found, or a clearly marked model where direct comps are thin."
+              : "Collector Price estimates what a knowledgeable collector may reasonably pay based mainly on validated comparable sales. Market Index is the broader AR Carddass market price."}
           </p>
           <div className="pricing-summary-grid">
             <span>Collector Price</span>
@@ -92,11 +95,19 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             <span>Fair Collector Range</span>
             <strong>
               {primary.verifiedSaleLowPhp && primary.verifiedSaleHighPhp
-                ? `${formatPeso(primary.verifiedSaleLowPhp)}–${formatPeso(primary.verifiedSaleHighPhp)}`
+                ? `${formatPeso(primary.verifiedSaleLowPhp)}-${formatPeso(primary.verifiedSaleHighPhp)}`
                 : "Insufficient verified sales"}
             </strong>
             <span>Market Index</span>
-            <strong>{formatPeso(primary.currentPublishedPricePhp)}</strong>
+            <strong>
+              {isWantedResearch
+                ? `Research high ${formatPeso(primary.currentPublishedPricePhp)}`
+                : formatPeso(primary.currentPublishedPricePhp)}
+            </strong>
+            <span>Low Market</span>
+            <strong>{formatPeso(marketRange.lowMarketPhp)}</strong>
+            <span>High Market</span>
+            <strong>{formatPeso(marketRange.highMarketPhp)}</strong>
             <span>Quick-Sale Estimate</span>
             <strong>{primary.quickSalePricePhp ? formatPeso(primary.quickSalePricePhp) : "Unavailable"}</strong>
             <span>Reseller Ask Range</span>
@@ -107,6 +118,14 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             </strong>
             <span>Collector Tier</span>
             <strong>{primary.collectorTier ?? "Unavailable"}</strong>
+            {isWantedResearch && card.researchPricingConfidence && (
+              <>
+                <span>Research basis</span>
+                <strong>{card.researchPricingConfidence}</strong>
+                <span>Source note</span>
+                <strong>{card.researchPricingSource ?? "Pending source review"}</strong>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -123,7 +142,11 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
           </div>
           <div className="stat-card">
             <span>Highest Verified Sale</span>
-            <strong>{formatPeso(primary.highestVerifiedSalePhp)}</strong>
+            <strong>
+              {primary.highestVerifiedSalePhp > 0
+                ? formatPeso(primary.highestVerifiedSalePhp)
+                : "Pending verification"}
+            </strong>
           </div>
         </div>
       </section>
@@ -131,8 +154,16 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
       <section className="shell section">
         <div className="grid two">
           <div className="content-card">
+            <PriceMovementExplanation card={card} version={primary} />
+          </div>
+          <div className="content-card">
             <PricingEvidenceSummary version={primary} />
           </div>
+        </div>
+      </section>
+
+      <section className="shell section">
+        <div className="grid two">
           <div className="content-card">
             <span className="label">Low-listing guardrail</span>
             <h2>Asks are not sales.</h2>

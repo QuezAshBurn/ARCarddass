@@ -31,10 +31,10 @@ export default async function SetPage({ params }: SetPageProps) {
     <section className="shell section" data-set={setCode}>
       <div className="content-card set-panel" data-set={setCode}>
         <span className="label">Formation set</span>
-        <h1>{setCode}</h1>
+        <h1>Formation {setCode.slice(1)}</h1>
         <p>
-          Set panel powered by original UI artwork. Card scans remain placeholders
-          until user-owned scans are added.
+          This route is scoped to the Formation product line. Wanted sets will use
+          their own set codes and pricing evidence when they are added.
         </p>
       </div>
       <div style={{ height: 24 }} />

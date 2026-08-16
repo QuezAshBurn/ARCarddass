@@ -4,6 +4,7 @@ import {
   type CollectorPricingEvidence,
   type CollectorTier
 } from "@/lib/domain/collector-pricing";
+import { wantedCards } from "@/lib/data/wanted-cards";
 
 export type PricingState =
   | "UNINITIALIZED"
@@ -74,10 +75,12 @@ export type EvidenceRecord = {
 };
 
 export type Card = {
+  productLine: ProductLine;
   cardNumber: string;
+  printedNumber?: string;
   characterName: string;
   formationSet: string;
-  rarity: "KR" | "SKR";
+  rarity: "KR" | "SKR" | "R" | "UC" | "C";
   category: string;
   pricingTier: 1;
   pricingEnabled: boolean;
@@ -86,9 +89,41 @@ export type Card = {
   accentB: string;
   summary: string;
   frontImagePath: string;
+  researchHighPricePhp?: number;
+  researchPricingSource?: string;
+  researchPricingUrl?: string;
+  researchPricingConfidence?: "Observed listing" | "Observed auction high" | "Modeled estimate" | "Needs review";
   versions: CardVersion[];
   priceHistory: PricePoint[];
 };
+
+export type ProductLine = "Formation" | "Wanted";
+
+export const productLines: {
+  code: ProductLine;
+  slug: string;
+  name: string;
+  status: "live" | "coming-soon";
+  shortName: string;
+  description: string;
+}[] = [
+  {
+    code: "Formation",
+    slug: "formation",
+    name: "AR Carddass Formation",
+    status: "live",
+    shortName: "Formation",
+    description: "Current live premium launch-card market tracked by this site."
+  },
+  {
+    code: "Wanted",
+    slug: "wanted",
+    name: "AR Carddass Wanted",
+    status: "live",
+    shortName: "Wanted",
+    description: "Research-high references are staged separately from the live Formation market."
+  }
+];
 
 const luffyHistory = [
   176000, 178500, 181000, 184000, 187250, 190000, 192250, 194000
@@ -222,6 +257,7 @@ function makeVersions(
 
 export const cards: Card[] = [
   {
+    productLine: "Formation",
     cardNumber: "F01-01",
     characterName: "Monkey D. Luffy",
     formationSet: "Formation 01",
@@ -241,6 +277,7 @@ export const cards: Card[] = [
     }))
   },
   {
+    productLine: "Formation",
     cardNumber: "F01-37",
     characterName: "Portgas D. Ace",
     formationSet: "Formation 01",
@@ -257,6 +294,7 @@ export const cards: Card[] = [
     priceHistory: makeHistory(74600, 0.0227)
   },
   {
+    productLine: "Formation",
     cardNumber: "F02-20",
     characterName: "Boa Hancock",
     formationSet: "Formation 02",
@@ -273,6 +311,7 @@ export const cards: Card[] = [
     priceHistory: makeHistory(132500, 0.0296)
   },
   {
+    productLine: "Formation",
     cardNumber: "F02-24",
     characterName: "Crocodile",
     formationSet: "Formation 02",
@@ -289,6 +328,7 @@ export const cards: Card[] = [
     priceHistory: makeHistory(61700, -0.004)
   },
   {
+    productLine: "Formation",
     cardNumber: "F03-03",
     characterName: "Roronoa Zoro",
     formationSet: "Formation 03",
@@ -305,6 +345,7 @@ export const cards: Card[] = [
     priceHistory: makeHistory(128800, 0.0236)
   },
   {
+    productLine: "Formation",
     cardNumber: "F03-13",
     characterName: "Sanji",
     formationSet: "Formation 03",
@@ -321,6 +362,7 @@ export const cards: Card[] = [
     priceHistory: makeHistory(80000, 0.00625)
   },
   {
+    productLine: "Formation",
     cardNumber: "F04-13",
     characterName: "Rob Lucci",
     formationSet: "Formation 04",
@@ -337,6 +379,7 @@ export const cards: Card[] = [
     priceHistory: makeHistory(108500, 0.002)
   },
   {
+    productLine: "Formation",
     cardNumber: "F04-27",
     characterName: "Sogeking",
     formationSet: "Formation 04",
@@ -351,7 +394,8 @@ export const cards: Card[] = [
     frontImagePath: "/assets/card-scans/f04-27-sogeking.png",
     versions: makeVersions("F04-27", 128000, 0.031, 86, 90, "High"),
     priceHistory: makeHistory(108000, 0.026)
-  }
+  },
+  ...wantedCards
 ];
 
 export const evidenceRecords: EvidenceRecord[] = [
@@ -532,6 +576,26 @@ export function getPrimaryVersion(card: Card): CardVersion {
   return card.versions[0];
 }
 
+export function getProductLineBySlug(slug?: string | null) {
+  return productLines.find((line) => line.slug === slug?.toLowerCase());
+}
+
+export function getCardsByProductLine(cardList: Card[], productLine?: ProductLine | null) {
+  if (!productLine) {
+    return cardList;
+  }
+
+  return cardList.filter((card) => card.productLine === productLine);
+}
+
+export function getProductLineSetLabel(productLine: ProductLine, setCode: string) {
+  if (productLine === "Wanted") {
+    return `Wanted ${setCode.replace(/^W/i, "")}`;
+  }
+
+  return `Formation ${setCode.replace(/^F/i, "")}`;
+}
+
 export function formatMarketUpdateAt(value?: string | null): string | null {
   if (!value) {
     return null;
@@ -562,6 +626,54 @@ export function formatMarketUpdateLabel(value?: string | null): string {
   const formatted = formatMarketUpdateAt(value);
 
   return formatted ? `Updated ${formatted}` : "Awaiting live update";
+}
+
+function positivePriceCandidates(values: Array<number | null | undefined>) {
+  return values
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value) && value > 0);
+}
+
+function getLowMarketFallbackFactor(version: CardVersion) {
+  if (version.confidence === "High") return 0.92;
+  if (version.confidence === "Moderate") return 0.88;
+
+  return 0.82;
+}
+
+export function getLowMarketPrice(version: CardVersion): number {
+  const fallbackFloor = Math.round(
+    version.currentPublishedPricePhp * getLowMarketFallbackFactor(version)
+  );
+  const candidates = positivePriceCandidates([
+    version.quickSalePricePhp,
+    version.verifiedSaleLowPhp,
+    version.resellerAskLowPhp,
+    version.initialReferencePricePhp,
+    fallbackFloor
+  ]);
+
+  return Math.min(...candidates, fallbackFloor);
+}
+
+export function getHighMarketPrice(version: CardVersion): number {
+  const candidates = positivePriceCandidates([
+    version.currentPublishedPricePhp,
+    version.highWaterReferencePhp,
+    version.highestVerifiedSalePhp,
+    version.verifiedSaleHighPhp,
+    version.resellerAskHighPhp
+  ]);
+
+  return Math.max(...candidates, version.currentPublishedPricePhp);
+}
+
+export function getMarketRange(version: CardVersion) {
+  return {
+    lowMarketPhp: getLowMarketPrice(version),
+    marketPricePhp: version.currentPublishedPricePhp,
+    highMarketPhp: getHighMarketPrice(version)
+  };
 }
 
 function getLatestMarketUpdateAt(cardList: Card[]): string | null {
@@ -601,10 +713,10 @@ export function getMarketSummary(cardList: Card[] = cards) {
   };
 }
 
-export function getSetCode(cardNumber: string): "F01" | "F02" | "F03" | "F04" {
+export function getSetCode(cardNumber: string): string {
   const setCode = cardNumber.slice(0, 3).toUpperCase();
 
-  if (setCode === "F01" || setCode === "F02" || setCode === "F03" || setCode === "F04") {
+  if (/^[FW]\d{2}$/.test(setCode)) {
     return setCode;
   }
 

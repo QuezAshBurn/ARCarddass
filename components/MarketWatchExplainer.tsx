@@ -1,5 +1,6 @@
 import type { Card } from "@/lib/data/cards";
-import { evidenceRecords, formatPeso, getPrimaryVersion } from "@/lib/data/cards";
+import { getPrimaryVersion } from "@/lib/data/cards";
+import { buildPriceMovementExplanation } from "@/lib/domain/price-explanations";
 
 type MarketWatchExplainerProps = {
   cards: Card[];
@@ -36,7 +37,14 @@ export function MarketWatchExplainer({ cards, lastMarketUpdate }: MarketWatchExp
   const strongestDemand = [...primaryRows].sort(
     (a, b) => b.version.demandScore - a.version.demandScore
   )[0];
-  const latestEvidence = evidenceRecords.slice(0, 3);
+  const signalNews = primaryRows
+    .map(({ card, version }) => ({
+      card,
+      version,
+      explanation: buildPriceMovementExplanation(card, version)
+    }))
+    .sort((a, b) => Math.abs(b.explanation.movementPercent) - Math.abs(a.explanation.movementPercent))
+    .slice(0, 4);
 
   return (
     <div className="market-watch">
@@ -119,15 +127,15 @@ export function MarketWatchExplainer({ cards, lastMarketUpdate }: MarketWatchExp
           </span>
         </div>
         <div className="news-list">
-          {latestEvidence.map((record) => (
-            <div className="news-item" key={record.id}>
-              <span className={record.status === "review" ? "pill review" : "pill live"}>
-                {record.status}
+          {signalNews.map(({ card, explanation }) => (
+            <div className="news-item" key={card.cardNumber}>
+              <span className={explanation.tone === "held" ? "pill review" : "pill live"}>
+                {explanation.tone === "held" ? "held" : "moved"}
               </span>
               <div>
-                <strong>{record.cardName}</strong>
+                <strong>{card.characterName}</strong>
                 <p>
-                  {record.marketplace} · {record.classification} · {formatPeso(record.phpPrice)}
+                  {explanation.headline} · {explanation.signals[0].value}
                 </p>
               </div>
             </div>
@@ -137,3 +145,4 @@ export function MarketWatchExplainer({ cards, lastMarketUpdate }: MarketWatchExp
     </div>
   );
 }
+

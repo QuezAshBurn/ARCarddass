@@ -1,6 +1,7 @@
+import { MarketAutomationStatus } from "@/components/MarketAutomationStatus";
 import { MarketTable } from "@/components/MarketTable";
 import { MarketWatchExplainer } from "@/components/MarketWatchExplainer";
-import { getMarketSummary } from "@/lib/data/cards";
+import { getCardsByProductLine, getMarketSummary, getProductLineBySlug, productLines } from "@/lib/data/cards";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 import { ensureMarketPricesFresh } from "@/lib/server/market-price-cron";
 
@@ -10,6 +11,7 @@ export const fetchCache = "force-no-store";
 
 type MarketPageProps = {
   searchParams?: {
+    line?: string;
     rarity?: string;
     sort?: string;
   };
@@ -52,13 +54,19 @@ function sortCards(cards: Awaited<ReturnType<typeof getCardsWithLivePrices>>, so
 export default async function MarketPage({ searchParams }: MarketPageProps) {
   await ensureMarketPricesFresh();
   const cards = await getCardsWithLivePrices();
+  const selectedLine = getProductLineBySlug(searchParams?.line);
+  const productLineCards =
+    selectedLine?.code === "Wanted"
+      ? []
+      : getCardsByProductLine(cards, selectedLine?.code ?? "Formation");
   const rarityFilter = searchParams?.rarity?.toUpperCase();
   const filteredCards =
     rarityFilter === "KR" || rarityFilter === "SKR"
-      ? cards.filter((card) => card.rarity === rarityFilter)
-      : cards;
+      ? productLineCards.filter((card) => card.rarity === rarityFilter)
+      : productLineCards;
   const visibleCards = sortCards(filteredCards, searchParams?.sort);
   const summary = getMarketSummary(visibleCards);
+  const lineQuery = selectedLine ? `line=${selectedLine.slug}&` : "";
 
   return (
     <section className="shell section">
@@ -75,47 +83,84 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
         </div>
         <span className="pill">{summary.lastMarketUpdate}</span>
       </div>
+      <div className="series-switcher" aria-label="Market product line filters">
+        <a className={`series-chip ${!selectedLine ? "active" : ""}`} href="/market">
+          <span>Live market</span>
+          <strong>{getCardsByProductLine(cards, "Formation").length} tracked cards</strong>
+        </a>
+        {productLines.map((line) => {
+          const lineCards = getCardsByProductLine(cards, line.code);
+
+          return (
+            <a
+              className={`series-chip ${selectedLine?.code === line.code ? "active" : ""}`}
+              href={`/market?line=${line.slug}`}
+              key={line.code}
+            >
+              <span>{line.shortName}</span>
+              <strong>{line.code === "Wanted" ? `${lineCards.length} research refs` : `${lineCards.length} tracked`}</strong>
+            </a>
+          );
+        })}
+      </div>
       <div className="filters market-filters" aria-label="Market filters">
-        <a className={`filter-chip ${!rarityFilter ? "active" : ""}`} href="/market">
+        <a className={`filter-chip ${!rarityFilter ? "active" : ""}`} href={selectedLine ? `/market?line=${selectedLine.slug}` : "/market"}>
           All premium
         </a>
-        <a className={`filter-chip ${rarityFilter === "KR" ? "active" : ""}`} href="/market?rarity=KR">
+        <a className={`filter-chip ${rarityFilter === "KR" ? "active" : ""}`} href={selectedLine ? `/market?line=${selectedLine.slug}&rarity=KR` : "/market?rarity=KR"}>
           King Rare / KR
         </a>
-        <a className={`filter-chip ${rarityFilter === "SKR" ? "active" : ""}`} href="/market?rarity=SKR">
+        <a className={`filter-chip ${rarityFilter === "SKR" ? "active" : ""}`} href={selectedLine ? `/market?line=${selectedLine.slug}&rarity=SKR` : "/market?rarity=SKR"}>
           Secret KR / SKR
         </a>
-        <a className="filter-chip" href="/market?sort=collector-high">
+        <a className="filter-chip" href={`/market?${lineQuery}sort=collector-high`}>
           Collector high → low
         </a>
-        <a className="filter-chip" href="/market?sort=verified-sales">
+        <a className="filter-chip" href={`/market?${lineQuery}sort=verified-sales`}>
           Most verified sales
         </a>
-        <a className="filter-chip" href="/market?sort=gap">
+        <a className="filter-chip" href={`/market?${lineQuery}sort=gap`}>
           Largest collector/index gap
         </a>
       </div>
-      <div className="grid three">
-        <div className="content-card">
-          <span className="label">Most demanded</span>
-          <h2>{summary.mostDemanded[0].card.characterName}</h2>
-          <p>{summary.mostDemanded[0].version.demandScore}/100 demand score.</p>
+      {visibleCards.length > 0 ? (
+        <>
+          <div className="grid three">
+            <div className="content-card">
+              <span className="label">Most demanded</span>
+              <h2>{summary.mostDemanded[0].card.characterName}</h2>
+              <p>{summary.mostDemanded[0].version.demandScore}/100 demand score.</p>
+            </div>
+            <div className="content-card">
+              <span className="label">Scarcest</span>
+              <h2>{summary.scarcest[0].card.characterName}</h2>
+              <p>{summary.scarcest[0].version.scarcityScore}/100 scarcity score.</p>
+            </div>
+            <div className="content-card">
+              <span className="label">Softest movement</span>
+              <h2>{summary.biggestDecliners[0].card.characterName}</h2>
+              <p>{summary.biggestDecliners[0].version.weeklyChangePercent.toFixed(2)}% this update.</p>
+            </div>
+          </div>
+          <div style={{ height: 22 }} />
+          <MarketAutomationStatus cards={visibleCards} lastMarketUpdate={summary.lastMarketUpdate} />
+          <div style={{ height: 22 }} />
+          <MarketWatchExplainer cards={visibleCards} lastMarketUpdate={summary.lastMarketUpdate} />
+          <div style={{ height: 22 }} />
+          <MarketTable cards={visibleCards} />
+        </>
+      ) : (
+        <div className="content-card coming-soon-panel">
+          <span className="label">Wanted market</span>
+          <h2>Wanted research highs stay separate from live pricing.</h2>
+          <p>
+            Wanted cards are now in the catalogue with high-reference research,
+            but they are not yet part of the automated Market Index. Once enough
+            verified sales and active asks are collected, Wanted can be activated
+            as its own independent market board.
+          </p>
         </div>
-        <div className="content-card">
-          <span className="label">Scarcest</span>
-          <h2>{summary.scarcest[0].card.characterName}</h2>
-          <p>{summary.scarcest[0].version.scarcityScore}/100 scarcity score.</p>
-        </div>
-        <div className="content-card">
-          <span className="label">Softest movement</span>
-          <h2>{summary.biggestDecliners[0].card.characterName}</h2>
-          <p>{summary.biggestDecliners[0].version.weeklyChangePercent.toFixed(2)}% this update.</p>
-        </div>
-      </div>
-      <div style={{ height: 22 }} />
-      <MarketWatchExplainer cards={visibleCards} lastMarketUpdate={summary.lastMarketUpdate} />
-      <div style={{ height: 22 }} />
-      <MarketTable cards={visibleCards} />
+      )}
     </section>
   );
 }

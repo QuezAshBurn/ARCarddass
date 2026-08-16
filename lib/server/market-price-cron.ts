@@ -6,7 +6,7 @@ import { requireCronSecret } from "@/lib/http/cron";
 import { methodologyVersion } from "@/config/pricing-rules";
 
 const manilaUtcOffsetMs = 8 * 60 * 60 * 1000;
-const halfDayMs = 12 * 60 * 60 * 1000;
+const hourMs = 60 * 60 * 1000;
 const staticCardsWithCollectorPricing = applyCollectorPricingToCards(staticCards);
 
 type MarketPriceUpdateOptions = {
@@ -19,13 +19,12 @@ function getCurrentPricingSlotStart(now: Date): Date {
   const localMonth = manilaDate.getUTCMonth();
   const localDay = manilaDate.getUTCDate();
   const localHour = manilaDate.getUTCHours();
-  const localSlotHour = localHour >= 12 ? 12 : 0;
 
-  return new Date(Date.UTC(localYear, localMonth, localDay, localSlotHour) - manilaUtcOffsetMs);
+  return new Date(Date.UTC(localYear, localMonth, localDay, localHour) - manilaUtcOffsetMs);
 }
 
 function getPreviousPricingSlotStart(slotStart: Date): Date {
-  return new Date(slotStart.getTime() - halfDayMs);
+  return new Date(slotStart.getTime() - hourMs);
 }
 type FreshEvidenceRow = {
   card_version_id: string;
@@ -37,6 +36,9 @@ type MaterialMarketEventRow = {
   event_type: string;
   event_at: string;
   validation_status: string;
+  php_amount: number | string | null;
+  listing_price: number | string | null;
+  sale_price: number | string | null;
   seller_id: string | null;
   marketplace_transaction_id: string | null;
   marketplace_listing_id: string | null;
@@ -107,7 +109,7 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
     return NextResponse.json({
       jobType: "MARKET_PRICE_UPDATE",
       status: "CALCULATED_STATIC_PREVIEW",
-      schedule: "0 4,16 * * * UTC = 12:00 and 00:00 Asia/Manila daily",
+      schedule: "0 * * * * UTC = hourly market watch and pricing updates",
       runKey,
       processedVersionCount: updates.length,
       note:
@@ -170,12 +172,13 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
   const freshEvidenceVersionIds = new Set<string>();
   const materialEventIdsByVersionId = new Map<string, string[]>();
   const verifiedSaleKeysByVersionId = new Map<string, Set<string>>();
+  const highestRawMarketPriceByVersionId = new Map<string, number>();
 
   if (versionIds.length > 0) {
     const { data: materialEvents, error: marketEventError } = await supabase
       .from("market_events")
       .select(
-        "id,card_version_id,event_type,event_at,validation_status,seller_id,marketplace_transaction_id,marketplace_listing_id"
+        "id,card_version_id,event_type,event_at,validation_status,php_amount,listing_price,sale_price,seller_id,marketplace_transaction_id,marketplace_listing_id"
       )
       .in("card_version_id", versionIds)
       .eq("validation_status", "ACCEPTED")
@@ -201,6 +204,21 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
           const keys = verifiedSaleKeysByVersionId.get(event.card_version_id) ?? new Set<string>();
           keys.add(saleKey);
           verifiedSaleKeysByVersionId.set(event.card_version_id, keys);
+        }
+
+        if (["VERIFIED_SALE", "ACTIVE_LISTING", "NEW_LISTING"].includes(event.event_type)) {
+          const rawMarketAmount =
+            event.event_type === "VERIFIED_SALE"
+              ? Number(event.sale_price ?? event.php_amount)
+              : Number(event.listing_price ?? event.php_amount);
+
+          if (Number.isFinite(rawMarketAmount) && rawMarketAmount > 0) {
+            const currentHigh = highestRawMarketPriceByVersionId.get(event.card_version_id) ?? 0;
+            highestRawMarketPriceByVersionId.set(
+              event.card_version_id,
+              Math.max(currentHigh, Math.round(rawMarketAmount))
+            );
+          }
         }
       }
     } else {
@@ -258,6 +276,9 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
       verifiedSaleCount: verifiedSaleKeysByVersionId.get(dbVersion.id)?.size
     });
     const evidenceIds = materialEventIdsByVersionId.get(dbVersion.id) ?? [];
+    const highestRawMarketPricePhp = highestRawMarketPriceByVersionId.get(dbVersion.id) ?? null;
+    const nextPublishedPricePhp = highestRawMarketPricePhp ?? update.nextPublishedPricePhp;
+    const nextWeeklyChangePhp = nextPublishedPricePhp - update.basePublishedPricePhp;
 
     const { data: snapshot, error: snapshotError } = await supabase
       .from("price_snapshots")
@@ -287,7 +308,7 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
           evidence_ids: evidenceIds,
           raw_movement_percent: update.result.calculatedMovementPercent,
           capped_movement_percent: update.result.calculatedMovementPercent,
-          calculated_price_php: update.result.calculatedPricePhp,
+          calculated_price_php: nextPublishedPricePhp,
           collector_price_php: staticVersion.collectorPricePhp,
           collector_price_confidence: staticVersion.collectorPriceConfidence,
           verified_sale_low_php: staticVersion.verifiedSaleLowPhp,
@@ -302,7 +323,7 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
           collector_tier: staticVersion.collectorTier,
           collector_price_updated_at: staticVersion.collectorPriceUpdatedAt,
           collector_pricing_rule_version: staticVersion.collectorPricingRuleVersion,
-          published_price_php: update.nextPublishedPricePhp,
+          published_price_php: nextPublishedPricePhp,
           confidence: staticVersion.confidence,
           methodology_version: methodologyVersion,
           pricing_rule_version: methodologyVersion,
@@ -326,8 +347,8 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
     const { error: publishError } = await supabase
       .from("card_versions")
       .update({
-        current_calculated_price_php: update.result.calculatedPricePhp,
-        current_published_price_php: update.nextPublishedPricePhp,
+        current_calculated_price_php: nextPublishedPricePhp,
+        current_published_price_php: nextPublishedPricePhp,
         last_market_update_at: now.toISOString()
       })
       .eq("id", dbVersion.id);
@@ -351,8 +372,8 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
       initial_reference_price_php:
         Number(dbVersion.initial_reference_price_php) || staticVersion.initialReferencePricePhp,
       previous_published_price_php: update.basePublishedPricePhp,
-      calculated_price_php: update.result.calculatedPricePhp,
-      published_price_php: update.nextPublishedPricePhp,
+      calculated_price_php: nextPublishedPricePhp,
+      published_price_php: nextPublishedPricePhp,
       collector_price_php: staticVersion.collectorPricePhp,
       collector_price_confidence: staticVersion.collectorPriceConfidence,
       verified_sale_low_php: staticVersion.verifiedSaleLowPhp,
@@ -391,7 +412,13 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
       ...update,
       characterName: getCharacterName(dbVersion) ?? update.characterName,
       databaseCardVersionId: dbVersion.id,
-      snapshotId: snapshot.id
+      snapshotId: snapshot.id,
+      highestRawMarketPricePhp,
+      nextPublishedPricePhp,
+      nextWeeklyChangePhp,
+      pricingDecision: highestRawMarketPricePhp
+        ? "PUBLISHED_HIGHEST_RAW_MARKET_PRICE"
+        : "PUBLISHED_SCHEDULED_KPI_RESULT"
     });
   }
 
@@ -409,7 +436,7 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
   return NextResponse.json({
     jobType: "MARKET_PRICE_UPDATE",
     status: "COMPLETED",
-    schedule: "0 4,16 * * * UTC = 12:00 and 00:00 Asia/Manila daily",
+    schedule: "0 * * * * UTC = hourly market watch and pricing updates",
     runKey,
     pricingPeriodStart,
     pricingPeriodEnd,

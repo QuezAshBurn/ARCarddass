@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cards } from "@/lib/data/cards";
 import { getServiceSupabaseClient } from "@/lib/database/supabase";
 import { requireCronSecret } from "@/lib/http/cron";
+import { ingestEbayRawAsks } from "@/lib/server/ebay-marketplace-ingestion";
 import { getMarketplaceDiscoveryPreview } from "@/lib/server/marketplace-crawler";
 
 export async function GET(request: Request) {
@@ -14,6 +15,12 @@ export async function GET(request: Request) {
   const supabase = getServiceSupabaseClient();
   const now = new Date().toISOString();
   const discovery = getMarketplaceDiscoveryPreview(cards, new Date(now));
+  let ingestion:
+    | Awaited<ReturnType<typeof ingestEbayRawAsks>>
+    | { status: "SKIPPED_NO_SUPABASE"; message: string } = {
+    status: "SKIPPED_NO_SUPABASE",
+    message: "Set Supabase service credentials before marketplace events can be stored."
+  };
 
   if (supabase) {
     for (const source of discovery.sources) {
@@ -31,14 +38,21 @@ export async function GET(request: Request) {
         { onConflict: "source_code" }
       );
     }
+
+    ingestion = await ingestEbayRawAsks({
+      cards,
+      supabase,
+      now: new Date(now)
+    });
   }
 
   return NextResponse.json({
     jobType: "COLLECT_MARKET_DATA",
-    status: discovery.status,
+    status: ingestion.status === "COMPLETED" ? "COMPLETED" : discovery.status,
     lastCheckAt: now,
     message:
-      "Marketplace crawl targets are configured. Enable official API, partner feed, or allowed connector credentials before extracting prices into market_events.",
+      "Marketplace crawl targets are configured. eBay active raw asks ingest automatically when EBAY_BROWSE_API_TOKEN or EBAY_ACCESS_TOKEN is configured; other marketplaces require official API, partner feed, or allowed connector credentials.",
+    ingestion,
     discovery
   });
 }

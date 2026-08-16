@@ -6,6 +6,7 @@ import {
   calculateWeeklyMarketPrice,
   modelVersionPrices,
   reverseGradedRawValue,
+  selectPublishedMarketReference,
   selectAutomaticPricingAction,
   selectHighestMarketReference
 } from "@/lib/domain/pricing";
@@ -36,7 +37,7 @@ describe("initial pricing", () => {
     ).toBe(118000);
   });
 
-  it("considers sold items, asking items, and formula items together", () => {
+  it("selects the highest candidate for pure comparison views", () => {
     expect(
       selectHighestMarketReference([
         { bucket: "SOLD", label: "Latest sold comp", pricePhp: 18500 },
@@ -50,19 +51,49 @@ describe("initial pricing", () => {
     });
   });
 
+  it("publishes the highest raw market value before falling back to graded formulas", () => {
+    expect(
+      selectPublishedMarketReference([
+        { bucket: "SOLD", label: "Latest sold comp", pricePhp: 18500 },
+        { bucket: "ASKING", label: "Highest active raw marketplace ask", pricePhp: 22000 },
+        { bucket: "FORMULA", label: "Graded-to-raw conversion", pricePhp: 42903 }
+      ])
+    ).toEqual({
+      bucket: "ASKING",
+      label: "Highest active raw marketplace ask",
+      pricePhp: 22000
+    });
+
+    expect(
+      selectPublishedMarketReference([
+        { bucket: "FORMULA", label: "Only graded-to-raw conversion", pricePhp: 42903 }
+      ])
+    ).toEqual({
+      bucket: "FORMULA",
+      label: "Only graded-to-raw conversion",
+      pricePhp: 42903
+    });
+  });
+
   it("reverse models Boa HK ARS 10 evidence", () => {
     expect(reverseGradedRawValue(232400, "ARS", "10")).toBe(66400);
   });
 
-  it("selects the highest raw-equivalent Wanted reference", () => {
+  it("uses raw Wanted market references before graded fallback references", () => {
     const luffy = getPrimaryVersion(cards.find((card) => card.cardNumber === "W02-02")!);
     const nami = getPrimaryVersion(cards.find((card) => card.cardNumber === "W02-08")!);
+    const robin = getPrimaryVersion(cards.find((card) => card.cardNumber === "W02-16")!);
+    const buggy = getPrimaryVersion(cards.find((card) => card.cardNumber === "W02-22")!);
+    const usopp = getPrimaryVersion(cards.find((card) => card.cardNumber === "W03-12")!);
     const chopper = getPrimaryVersion(cards.find((card) => card.cardNumber === "W01-12")!);
 
-    expect(luffy.currentPublishedPricePhp).toBe(14000);
+    expect(luffy.currentPublishedPricePhp).toBe(18571);
+    expect(robin.currentPublishedPricePhp).toBe(2700);
+    expect(buggy.currentPublishedPricePhp).toBe(7354);
+    expect(usopp.currentPublishedPricePhp).toBe(4800);
     expect(luffy.currentPublishedPricePhp).toBeGreaterThan(reverseGradedRawValue(65900, "PSA", "10"));
-    expect(nami.currentPublishedPricePhp).toBe(reverseGradedRawValue(98100, "PSA", "10"));
-    expect(chopper.currentPublishedPricePhp).toBe(reverseGradedRawValue(12300, "PSA", "9"));
+    expect(nami.currentPublishedPricePhp).toBe(9200);
+    expect(chopper.currentPublishedPricePhp).toBe(3100);
   });
 
   it("keeps Wanted latest sold blank unless a dated completed sale exists", () => {

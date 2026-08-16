@@ -4,10 +4,12 @@ export type MarketplaceSourceCode =
   | "ebay"
   | "mercari_jp"
   | "yahoo_auction_jp"
+  | "jdirect_items"
   | "yahoo_fleamarket_jp"
   | "mandarake"
   | "surugaya"
-  | "rakuma";
+  | "rakuma"
+  | "remambo_proxy";
 
 export type MarketplaceEventCoverage = "SOLD" | "ASKING" | "FORMULA_INPUT";
 
@@ -49,7 +51,7 @@ export const marketplaceSources: MarketplaceSource[] = [
   },
   {
     code: "yahoo_auction_jp",
-    name: "Yahoo Auctions Japan",
+    name: "Yahoo Auctions Japan / JDirectItems",
     country: "Japan",
     currency: "JPY",
     coverage: ["ASKING", "SOLD"],
@@ -57,6 +59,17 @@ export const marketplaceSources: MarketplaceSource[] = [
     status: "READY_WITH_CREDENTIALS",
     buildSearchUrl: (query) =>
       `https://auctions.yahoo.co.jp/search/search?p=${encodeQuery(query)}&auccat=0`
+  },
+  {
+    code: "jdirect_items",
+    name: "JDirectItems auction proxy",
+    country: "Japan",
+    currency: "JPY",
+    coverage: ["ASKING", "SOLD"],
+    adapter: "search-target",
+    status: "TARGET_ONLY",
+    buildSearchUrl: (query) =>
+      `https://www.remambo.jp/auction?keyword=${encodeQuery(query)}`
   },
   {
     code: "yahoo_fleamarket_jp",
@@ -100,6 +113,16 @@ export const marketplaceSources: MarketplaceSource[] = [
     adapter: "search-target",
     status: "TARGET_ONLY",
     buildSearchUrl: (query) => `https://fril.jp/search/${encodeQuery(query)}`
+  },
+  {
+    code: "remambo_proxy",
+    name: "Remambo multi-market proxy",
+    country: "Japan",
+    currency: "JPY",
+    coverage: ["ASKING", "SOLD"],
+    adapter: "search-target",
+    status: "TARGET_ONLY",
+    buildSearchUrl: (query) => `https://www.remambo.jp/search?keyword=${encodeQuery(query)}`
   }
 ];
 

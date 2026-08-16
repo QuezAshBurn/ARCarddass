@@ -1,11 +1,13 @@
 import type { Card, CardVersion, PricePoint } from "@/lib/data/cards";
 import {
   reverseGradedRawValue,
-  selectHighestMarketReference,
+  selectPublishedMarketReference,
   type MarketReferenceCandidate
 } from "@/lib/domain/pricing";
 
 type WantedSourceConfidence = NonNullable<Card["researchPricingConfidence"]>;
+
+const USD_TO_PHP_RESEARCH_RATE = 61.29;
 
 type WantedCardInput = {
   cardNumber: string;
@@ -45,8 +47,12 @@ function rawFromGradedAsk(
   return reverseGradedRawValue(gradedPricePhp, grader, grade);
 }
 
+function usdToPhp(usdAmount: number, fxRate: number) {
+  return Math.round(usdAmount * fxRate);
+}
+
 function highestMarketReference(candidates: MarketReferenceCandidate[]) {
-  return selectHighestMarketReference(candidates).pricePhp;
+  return selectPublishedMarketReference(candidates).pricePhp;
 }
 
 function isObservedAsk(input: WantedCardInput) {
@@ -272,10 +278,10 @@ export const wantedCards: Card[] = [
     summary: "Main-character demand creates a strong high reference by comparing raw marketplace asks against graded-implied raw value.",
     frontImagePath: "/assets/card-scans/wanted/w02-02-luffy.png",
     highReferencePhp: highestMarketReference([
-      { bucket: "ASKING", label: "Raw marketplace ask", pricePhp: 14000 },
-      { bucket: "FORMULA", label: "PSA 10 graded ask converted to raw", pricePhp: rawFromGradedAsk(65900, "PSA", "10") }
+      { bucket: "ASKING", label: "eBay active raw ask item 278201455485", pricePhp: usdToPhp(303, USD_TO_PHP_RESEARCH_RATE) },
+      { bucket: "FORMULA", label: "eBay CGC 10 Pristine ask converted to raw", pricePhp: rawFromGradedAsk(usdToPhp(3500, USD_TO_PHP_RESEARCH_RATE), "CGC", "10 Pristine") }
     ]),
-    source: "Highest raw reference selected from raw marketplace asks around ₱14,000 versus eBay PSA 10 ask around ₱65,900 reversed with PSA 10 ÷ 6.00; collector-provided eBay active listing item 278201455485 added for next ask validation.",
+    source: "Highest raw market reference selected from collector-provided eBay active raw ask item 278201455485 at US$303. Graded-to-raw references are tracked only as fallback when no raw market price exists.",
     sourceUrl: "https://www.ebay.com/itm/278201455485",
     sourceConfidence: "Observed listing",
     demandScore: 90,
@@ -313,10 +319,13 @@ export const wantedCards: Card[] = [
     set: "Wanted 02",
     rarity: "C",
     category: "Wanted poster character",
-    summary: "Common Wanted reference with direct Mercari ask evidence and moderate character demand.",
+    summary: "Common Wanted reference keeps the raw market floor because graded-to-raw is only a fallback when no raw market price exists.",
     frontImagePath: "/assets/card-scans/wanted/w02-16-robin.png",
-    highReferencePhp: 2700,
-    source: "Highest ask reference from Mercari JP exact Robin 02-16 around Â¥7,000.",
+    highReferencePhp: highestMarketReference([
+      { bucket: "ASKING", label: "Mercari raw-search floor", pricePhp: 2700 },
+      { bucket: "FORMULA", label: "eBay PSA 10 ask converted to raw", pricePhp: rawFromGradedAsk(usdToPhp(1100, USD_TO_PHP_RESEARCH_RATE), "PSA", "10") }
+    ]),
+    source: "Raw marketplace reference retained from Mercari JP exact Robin 02-16 around ¥7,000; PSA 10 graded ask remains a fallback-only signal.",
     sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%83%AD%E3%83%93%E3%83%B3%2002-16",
     sourceConfidence: "Observed listing",
     demandScore: 70,
@@ -353,8 +362,11 @@ export const wantedCards: Card[] = [
     category: "Wanted poster character",
     summary: "Observed high ask gives Buggy a stronger reference than most uncommon Wanted cards.",
     frontImagePath: "/assets/card-scans/wanted/w02-22-buggy.png",
-    highReferencePhp: 7400,
-    source: "Highest ask reference from eBay around US$119.99 for AR Carddass Second Formation Buggy 02-22.",
+    highReferencePhp: highestMarketReference([
+      { bucket: "ASKING", label: "eBay raw ask", pricePhp: usdToPhp(119.99, USD_TO_PHP_RESEARCH_RATE) },
+      { bucket: "FORMULA", label: "eBay CGC 10 Pristine ask converted to raw", pricePhp: rawFromGradedAsk(usdToPhp(1700, USD_TO_PHP_RESEARCH_RATE), "CGC", "10 Pristine") }
+    ]),
+    source: "Highest raw market reference selected from eBay around US$119.99 for AR Carddass Second Formation Buggy 02-22; CGC 10 Pristine ask is fallback-only.",
     sourceUrl: "https://www.ebay.com/sch/i.html?_nkw=One+Piece+AR+Carddass+Buggy+02-22",
     sourceConfidence: "Observed listing",
     demandScore: 64,
@@ -427,11 +439,14 @@ export const wantedCards: Card[] = [
     set: "Wanted 03",
     rarity: "UC",
     category: "Wanted poster character",
-    summary: "High SP and UC rarity lift Usopp above most common Wanted references.",
+    summary: "High SP and UC rarity lift Usopp, but raw market pricing remains preferred over graded-to-raw fallback signals.",
     frontImagePath: "/assets/card-scans/wanted/w03-12-usopp.png",
-    highReferencePhp: 4800,
-    source: "Needs-review high ask from Wanted-line rarity, SP 3600, Straw Hat demand, and sparse eBay/Mercari comps.",
-    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%82%A6%E3%82%BD%E3%83%83%E3%83%97%2003-12",
+    highReferencePhp: highestMarketReference([
+      { bucket: "ASKING", label: "Wanted-line raw floor", pricePhp: 4800 },
+      { bucket: "FORMULA", label: "eBay PSA 10 ask converted to raw", pricePhp: rawFromGradedAsk(usdToPhp(900, USD_TO_PHP_RESEARCH_RATE), "PSA", "10") }
+    ]),
+    source: "Raw Wanted-line floor retained while PSA 10 ask around US$900 remains fallback-only because raw market pricing exists.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%82%A6%E3%82%BD%E3%83%83%E3%83%97%2003-12",
     sourceConfidence: "Needs review",
     demandScore: 62,
     scarcityScore: 58,

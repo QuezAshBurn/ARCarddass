@@ -101,6 +101,18 @@ export function selectHighestMarketReference(
   );
 }
 
+export function selectPublishedMarketReference(
+  candidates: MarketReferenceCandidate[]
+): MarketReferenceSelection {
+  const rawMarketCandidates = candidates.filter((candidate) => candidate.bucket !== "FORMULA");
+
+  if (rawMarketCandidates.some((candidate) => typeof candidate.pricePhp === "number" && candidate.pricePhp > 0)) {
+    return selectHighestMarketReference(rawMarketCandidates);
+  }
+
+  return selectHighestMarketReference(candidates);
+}
+
 export function reverseGradedRawValue(
   gradedPricePhp: number,
   grader: keyof typeof gradeMultipliers,

@@ -28,6 +28,21 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
   return (
     <div className="table-wrap market-table-wrap">
       <table className="market-table">
+        <colgroup>
+          <col className="market-col-card" />
+          <col className="market-col-rarity" />
+          <col className="market-col-price" />
+          <col className="market-col-price" />
+          <col className="market-col-price" />
+          <col className="market-col-price" />
+          <col className="market-col-range" />
+          <col className="market-col-range" />
+          <col className="market-col-score" />
+          <col className="market-col-score" />
+          <col className="market-col-trend" />
+          <col className="market-col-confidence" />
+          <col className="market-col-updated" />
+        </colgroup>
         <thead>
           <tr>
             <th>Card</th>
@@ -63,26 +78,26 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
                       </span>
                     </Link>
                   </td>
-                  <td data-label="Rarity">{card.rarity}</td>
-                  <td data-label="Collector price">
+                  <td className="market-table__rarity" data-label="Rarity">{card.rarity}</td>
+                  <td className="market-table__price" data-label="Collector price">
                     <CollectorPrice value={primary.collectorPricePhp} />
                   </td>
-                  <td data-label="Market index">
+                  <td className="market-table__price" data-label="Market index">
                     <strong>{formatPeso(primary.currentPublishedPricePhp)}</strong>
                     <br />
                     <span className="market-row-note">Market Price</span>
                   </td>
-                  <td data-label="Low market">
+                  <td className="market-table__price" data-label="Low market">
                     <strong>{formatPeso(marketRange.lowMarketPhp)}</strong>
                     <br />
                     <span className="market-row-note">Floor side</span>
                   </td>
-                  <td data-label="High market">
+                  <td className="market-table__price" data-label="High market">
                     <strong>{formatPeso(marketRange.highMarketPhp)}</strong>
                     <br />
                     <span className="market-row-note">Ceiling side</span>
                   </td>
-                  <td data-label="Verified sales">
+                  <td className="market-table__range" data-label="Verified sales">
                     <PriceRange
                       low={primary.verifiedSaleLowPhp}
                       high={primary.verifiedSaleHighPhp}
@@ -92,7 +107,7 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
                       emptyLabel="No verified sales"
                     />
                   </td>
-                  <td data-label="Reseller ask">
+                  <td className="market-table__range" data-label="Reseller ask">
                     <PriceRange
                       low={primary.resellerAskLowPhp}
                       high={primary.resellerAskHighPhp}
@@ -102,9 +117,9 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
                       emptyLabel="No active asks"
                     />
                   </td>
-                  <td data-label="Demand">{primary.demandScore}/100</td>
-                  <td data-label="Scarcity">{primary.scarcityScore}/100</td>
-                  <td className={changeClass} data-label="Trend">
+                  <td className="market-table__score" data-label="Demand">{primary.demandScore}/100</td>
+                  <td className="market-table__score" data-label="Scarcity">{primary.scarcityScore}/100</td>
+                  <td className={`market-table__trend ${changeClass}`} data-label="Trend">
                     <strong>
                       {primary.weeklyChangePercent >= 0 ? "+" : ""}
                       {primary.weeklyChangePercent.toFixed(2)}%
@@ -112,10 +127,10 @@ export function MarketTable({ cards, limit }: MarketTableProps) {
                     <br />
                     <span className="market-row-note">{getMovementStory(primary.weeklyChangePercent)}</span>
                   </td>
-                  <td data-label="Confidence">
+                  <td className="market-table__confidence" data-label="Confidence">
                     <CollectorConfidenceBadge confidence={primary.collectorPriceConfidence} />
                   </td>
-                  <td data-label="Updated">{formatMarketUpdateAt(primary.lastMarketUpdateAt) ?? "Pending"}</td>
+                  <td className="market-table__updated" data-label="Updated">{formatMarketUpdateAt(primary.lastMarketUpdateAt) ?? "Pending"}</td>
                 </tr>
                 <tr className="market-explain-row">
                   <td colSpan={13}>

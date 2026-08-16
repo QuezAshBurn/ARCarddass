@@ -1313,12 +1313,33 @@ table {
   min-width: 0;
 }
 
+.market-table {
+  table-layout: fixed;
+}
+
+.market-col-card { width: 15.5%; }
+.market-col-rarity { width: 4.5%; }
+.market-col-price { width: 8.2%; }
+.market-col-range { width: 8.5%; }
+.market-col-score { width: 5.2%; }
+.market-col-trend { width: 6%; }
+.market-col-confidence { width: 7%; }
+.market-col-updated { width: 7%; }
+
 th,
 td {
   border-bottom: 1px solid rgba(255, 255, 255, 0.09);
   padding: 0.95rem 1rem;
   text-align: left;
   overflow-wrap: anywhere;
+}
+
+.market-table th,
+.market-table td {
+  padding: clamp(0.55rem, 0.72vw, 0.95rem) clamp(0.42rem, 0.62vw, 1rem);
+  line-height: 1.18;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 th {
@@ -1328,6 +1349,54 @@ th {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.market-table th {
+  font-size: clamp(0.58rem, 0.62vw, 0.78rem);
+  line-height: 1.08;
+}
+
+.market-table td {
+  font-size: clamp(0.74rem, 0.74vw, 0.95rem);
+}
+
+.market-table td strong,
+.collector-price,
+.price-range {
+  font-size: clamp(0.74rem, 0.82vw, 1rem);
+  line-height: 1.08;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-table__price strong,
+.market-table__score,
+.market-table__trend strong,
+.market-table__updated,
+.collector-price:not(.collector-price--empty),
+.price-range {
+  white-space: nowrap;
+}
+
+.market-table__rarity,
+.market-table__score,
+.market-table__trend {
+  font-family: var(--font-ui);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-table__confidence .collector-confidence {
+  padding-inline: clamp(0.42rem, 0.58vw, 0.8rem);
+  font-size: clamp(0.58rem, 0.64vw, 0.78rem);
+  white-space: nowrap;
+}
+
+.market-table .market-row-note,
+.price-range small,
+.collector-price small {
+  font-size: clamp(0.58rem, 0.62vw, 0.72rem);
+  line-height: 1.15;
+  overflow-wrap: normal;
 }
 
 tr:last-child td {

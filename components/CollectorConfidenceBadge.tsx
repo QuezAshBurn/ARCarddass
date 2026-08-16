@@ -5,11 +5,17 @@ type CollectorConfidenceBadgeProps = {
 };
 
 export function CollectorConfidenceBadge({ confidence }: CollectorConfidenceBadgeProps) {
-  const label = confidence === "INSUFFICIENT_DATA" ? "Insufficient data" : confidence.toLowerCase();
+  const isInsufficientData = confidence === "INSUFFICIENT_DATA";
+  const label = isInsufficientData ? "Insufficient data" : confidence.toLowerCase();
 
   return (
     <span className={`collector-confidence collector-confidence--${confidence.toLowerCase().replace("_", "-")}`}>
-      {label}
+      {isInsufficientData ? (
+        <>
+          <span>Insufficient</span>
+          <span>data</span>
+        </>
+      ) : label}
     </span>
   );
 }

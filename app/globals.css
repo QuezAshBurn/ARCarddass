@@ -1328,14 +1328,14 @@ table {
   table-layout: fixed;
 }
 
-.market-col-card { width: 14%; }
+.market-col-card { width: 13%; }
 .market-col-rarity { width: 4%; }
-.market-col-price { width: 7.2%; }
-.market-col-range { width: 8%; }
-.market-col-score { width: 5%; }
-.market-col-trend { width: 6%; }
-.market-col-confidence { width: 10%; }
-.market-col-updated { width: 11.2%; }
+.market-col-price { width: 7%; }
+.market-col-range { width: 7.5%; }
+.market-col-score { width: 4%; }
+.market-col-trend { width: 5%; }
+.market-col-confidence { width: 13.5%; }
+.market-col-updated { width: 13.5%; }
 
 th,
 td {
@@ -1668,6 +1668,13 @@ tr:last-child td {
 .collector-confidence--insufficient-data {
   color: var(--text-muted);
   background: rgba(255, 255, 255, 0.06);
+}
+
+.collector-confidence--insufficient-data {
+  flex-direction: column;
+  gap: 0.05rem;
+  line-height: 1;
+  text-align: center;
 }
 
 .price-range {

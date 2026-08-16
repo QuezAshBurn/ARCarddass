@@ -11,8 +11,8 @@ type PullExperienceProps = {
 };
 
 const PACK_OUTCOMES = [
-  { wantedCount: 3, kingRareCount: 0, weight: 97 },
-  { wantedCount: 2, kingRareCount: 1, weight: 3 }
+  { standardCount: 3, kingRareCount: 0, weight: 97 },
+  { standardCount: 2, kingRareCount: 1, weight: 3 }
 ] as const;
 
 function shuffleCards(cardPool: Card[]) {
@@ -38,15 +38,21 @@ function selectPackOutcome() {
   return PACK_OUTCOMES[0];
 }
 
-function makeRevealCards(kingRarePool: Card[], wantedPool: Card[]) {
+function isShinyHit(card: Card) {
+  return card.productLine === "Formation" &&
+    card.catalogueGroup !== "Film Z" &&
+    (card.rarity === "KR" || card.rarity === "SKR");
+}
+
+function makeRevealCards(kingRarePool: Card[], standardPool: Card[]) {
   const outcome = selectPackOutcome();
-  const selectedWanted = takeRandom(wantedPool, outcome.wantedCount);
+  const selectedStandardCards = takeRandom(standardPool, outcome.standardCount);
   const selectedKingRares = takeRandom(kingRarePool, outcome.kingRareCount);
-  const missingCards = 3 - selectedWanted.length - selectedKingRares.length;
-  const fallbackPool = selectedWanted.length < outcome.wantedCount ? kingRarePool : wantedPool;
+  const missingCards = 3 - selectedStandardCards.length - selectedKingRares.length;
+  const fallbackPool = selectedStandardCards.length < outcome.standardCount ? kingRarePool : standardPool;
 
   return shuffleCards([
-    ...selectedWanted,
+    ...selectedStandardCards,
     ...selectedKingRares,
     ...takeRandom(fallbackPool, missingCards)
   ]);
@@ -54,17 +60,19 @@ function makeRevealCards(kingRarePool: Card[], wantedPool: Card[]) {
 
 export function PullExperience({ cards }: PullExperienceProps) {
   const kingRarePool = cards.filter(
-    (card) => card.productLine === "Formation" && (card.rarity === "KR" || card.rarity === "SKR")
+    (card) => isShinyHit(card)
   );
-  const wantedPool = cards.filter((card) => card.productLine === "Wanted");
-  const canReveal = kingRarePool.length > 0 && wantedPool.length > 0;
+  const standardPool = cards.filter(
+    (card) => card.productLine === "Wanted" || card.catalogueGroup === "Film Z"
+  );
+  const canReveal = kingRarePool.length > 0 && standardPool.length > 0;
   const [state, setState] = useState<"sealed" | "opening" | "opened">("sealed");
   const [revealCards, setRevealCards] = useState<Card[]>([]);
 
   function openPack() {
     if (!canReveal) return;
 
-    setRevealCards(makeRevealCards(kingRarePool, wantedPool));
+    setRevealCards(makeRevealCards(kingRarePool, standardPool));
     setState("opening");
     window.setTimeout(() => setState("opened"), 760);
   }
@@ -72,7 +80,7 @@ export function PullExperience({ cards }: PullExperienceProps) {
   function skipAnimation() {
     if (!canReveal) return;
 
-    setRevealCards(makeRevealCards(kingRarePool, wantedPool));
+    setRevealCards(makeRevealCards(kingRarePool, standardPool));
     setState("opened");
   }
 
@@ -84,8 +92,8 @@ export function PullExperience({ cards }: PullExperienceProps) {
     <div className="pack-stage" aria-live="polite">
       <BoosterPack state={state} />
       {state === "opened" && (
-        <div className="pull-cards" aria-label="Random King Rare and Wanted pack reveal result">
-          {revealCards.map((card, index) => (
+        <div className="pull-cards" aria-label="Random King Rare, Wanted, and Film Z pack reveal result">
+          {revealCards.map((card) => (
             <Link href={`/cards/${card.cardNumber}`} key={card.cardNumber}>
               <CardArt
                 characterName={card.characterName}
@@ -94,7 +102,7 @@ export function PullExperience({ cards }: PullExperienceProps) {
                 accentA={card.accentA}
                 accentB={card.accentB}
                 imageSrc={card.frontImagePath}
-                active={index === revealCards.length - 1}
+                active={isShinyHit(card)}
               />
             </Link>
           ))}
@@ -115,12 +123,12 @@ export function PullExperience({ cards }: PullExperienceProps) {
         </Link>
       </div>
       <p className="muted">
-        Random 3-card reveal: 97% three Wanted cards. A 3% hit contains two Wanted
-        cards and one random King Rare or Secret King Rare.
+        Random 3-card reveal: 97% are Wanted and Film Z cards. A 3% hit replaces one
+        regular card with a shining King Rare or Secret King Rare.
       </p>
       {!canReveal && (
         <p className="muted">
-          Live King Rare/SKR and Wanted cards are both needed to open a mixed pack.
+          Live King Rare/SKR plus Wanted or Film Z cards are needed to open a mixed pack.
         </p>
       )}
     </div>

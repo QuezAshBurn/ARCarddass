@@ -37,7 +37,7 @@ export default async function HomePage() {
             </p>
             <div className="hero__actions">
               <Link className="button primary" href="/pull">
-                Open King Rare Pack
+                Open collector pack
               </Link>
               <Link className="button secondary" href="/market">
                 View Market

@@ -6,7 +6,16 @@ import { PriceRelationship } from "@/components/PriceRelationship";
 import { PriceMovementExplanation } from "@/components/PriceMovementExplanation";
 import { PriceSparkline } from "@/components/PriceSparkline";
 import { PricingEvidenceSummary } from "@/components/PricingEvidenceSummary";
-import { cards as staticCards, evidenceRecords, formatPeso, getMarketRange, getPrimaryVersion } from "@/lib/data/cards";
+import {
+  cards as staticCards,
+  evidenceRecords,
+  formatMarketUpdateAt,
+  formatPeso,
+  getMarketRange,
+  getProductLineSetLabel,
+  getPrimaryVersion,
+  getSetCode
+} from "@/lib/data/cards";
 import { getCardWithLivePrices } from "@/lib/data/live-cards";
 
 type CardDetailPageProps = {
@@ -32,6 +41,9 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
   const records = evidenceRecords.filter((record) => record.cardNumber === card.cardNumber);
   const isWantedResearch = card.productLine === "Wanted";
   const marketRange = getMarketRange(primary);
+  const latestSoldAt = formatMarketUpdateAt(primary.latestVerifiedSaleAt);
+  const productLineLabel = card.productLine === "Formation" ? "King Rare" : card.productLine;
+  const setLabel = getProductLineSetLabel(card.productLine, getSetCode(card.cardNumber));
 
   return (
     <>
@@ -49,7 +61,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
         </div>
         <div className="content-card">
           <span className="eyebrow">
-            {card.productLine} &middot; {card.formationSet} &middot; {card.rarity} &middot; {card.cardNumber}
+            {productLineLabel} &middot; {setLabel} &middot; {card.rarity} &middot; {card.cardNumber}
           </span>
           <h1>{card.characterName}</h1>
           <p>{card.summary}</p>
@@ -86,7 +98,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
           <h2>Collector Price vs Market Index</h2>
           <p>
             {isWantedResearch
-              ? "Wanted pricing is currently a research-high reference layer. It shows the highest useful public reference we found, or a clearly marked model where direct comps are thin."
+              ? "Wanted pricing compares three buckets before publishing: sold items, active asking items, and formula-derived raw values such as graded-to-raw conversions. The Market Index uses the highest eligible reference, with thin comps marked for review."
               : "Collector Price estimates what a knowledgeable collector may reasonably pay based mainly on validated comparable sales. Market Index is the broader AR Carddass market price."}
           </p>
           <div className="pricing-summary-grid">
@@ -141,11 +153,13 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             <strong>{formatPeso(primary.highWaterReferencePhp)}</strong>
           </div>
           <div className="stat-card">
-            <span>Highest Verified Sale</span>
+            <span>{isWantedResearch ? "Latest Sold Reference" : "Highest Verified Sale"}</span>
             <strong>
               {primary.highestVerifiedSalePhp > 0
-                ? formatPeso(primary.highestVerifiedSalePhp)
-                : "Pending verification"}
+                ? `${formatPeso(primary.highestVerifiedSalePhp)}${isWantedResearch && latestSoldAt ? ` · ${latestSoldAt}` : ""}`
+                : isWantedResearch
+                  ? "Pending dated sale"
+                  : "Pending verification"}
             </strong>
           </div>
         </div>

@@ -1,7 +1,7 @@
 ﻿import Link from "next/link";
 import { CardArt } from "@/components/CardArt";
 import type { Card } from "@/lib/data/cards";
-import { formatPeso, getPrimaryVersion, getSetCode } from "@/lib/data/cards";
+import { formatPeso, getPrimaryVersion, getSetCode, getProductLineSetLabel } from "@/lib/data/cards";
 
 type CardFormationProps = {
   cards: Card[];
@@ -34,7 +34,7 @@ export function CardFormation({ cards }: CardFormationProps) {
                 <h3>{card.characterName}</h3>
                 <span className="pill live">{primary.confidence}</span>
               </div>
-              <p>{card.cardNumber} · {card.formationSet}</p>
+              <p>{card.cardNumber} · {getProductLineSetLabel(card.productLine, getSetCode(card.cardNumber))}</p>
             </div>
             <div className="card-row">
               <span className="muted">{card.rarity}</span>

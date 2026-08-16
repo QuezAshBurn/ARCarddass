@@ -3,10 +3,10 @@ import { getCardsByProductLine, getProductLineBySlug, productLines } from "@/lib
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
 const filterLabels = [
-  "Formation 01",
-  "Formation 02",
-  "Formation 03",
-  "Formation 04",
+  "King Rare 01",
+  "King Rare 02",
+  "King Rare 03",
+  "King Rare 04",
   "Wanted 01",
   "Wanted 02",
   "Wanted 03",
@@ -40,9 +40,9 @@ export default async function CataloguePage({ searchParams }: CataloguePageProps
   return (
     <section className="shell section">
       <span className="eyebrow">Catalogue</span>
-      <h1>Built for Formation now, ready for Wanted next.</h1>
+      <h1>Built for King Rare and Wanted.</h1>
       <p>
-        Formation and Wanted are separated at the product-line level so evidence,
+        King Rare and Wanted are separated at the product-line level so evidence,
         pricing, and market movement never mix between different AR Carddass lines.
       </p>
 
@@ -62,9 +62,7 @@ export default async function CataloguePage({ searchParams }: CataloguePageProps
             >
               <span>{line.shortName}</span>
               <strong>
-                {line.code === "Wanted"
-                  ? `${lineCards.length} research refs`
-                  : `${lineCards.length} live cards`}
+                {lineCards.length} live cards
               </strong>
             </a>
           );
@@ -84,11 +82,10 @@ export default async function CataloguePage({ searchParams }: CataloguePageProps
       ) : (
         <div className="content-card coming-soon-panel">
           <span className="label">{wantedLine?.name ?? "Wanted"}</span>
-          <h2>Wanted cards are ready to be added.</h2>
+          <h2>No cards match this catalogue filter yet.</h2>
           <p>
-            Once Wanted card scans, set codes, and starting references are added,
-            they will appear here with their own isolated market evidence and
-            pricing history.
+            Clear the current product-line filter to view all cards tracked by
+            this catalogue.
           </p>
         </div>
       )}

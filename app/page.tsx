@@ -32,11 +32,11 @@ export default async function HomePage() {
             <p>
               Track premium AR Carddass cards with transparent PHP pricing based
               on evidence, supply and demand, rarity, circulation, and twice-daily
-              market checks. Formation is live now; Wanted is staged next.
+              market checks. King Rare is live now; Wanted is staged next.
             </p>
             <div className="hero__actions">
               <Link className="button primary" href="/pull">
-                Open Formation Pack
+                Open King Rare Pack
               </Link>
               <Link className="button secondary" href="/market">
                 View Market
@@ -74,7 +74,7 @@ export default async function HomePage() {
         <div className="section-head">
           <div>
             <span className="label">Live product line</span>
-            <h2>Formation cards now, Wanted cards next.</h2>
+            <h2>King Rare cards now, Wanted cards next.</h2>
           </div>
           <Link className="button secondary" href="/cards">
             Browse all cards

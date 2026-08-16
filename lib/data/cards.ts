@@ -34,6 +34,7 @@ export type CardVersion = {
   verifiedSaleMedianPhp: number | null;
   verifiedSaleHighPhp: number | null;
   verifiedSaleCount: number;
+  latestVerifiedSaleAt?: string | null;
   resellerAskLowPhp: number | null;
   resellerAskMedianPhp: number | null;
   resellerAskHighPhp: number | null;
@@ -110,9 +111,9 @@ export const productLines: {
   {
     code: "Formation",
     slug: "formation",
-    name: "AR Carddass Formation",
+    name: "AR Carddass King Rare",
     status: "live",
-    shortName: "Formation",
+    shortName: "King Rare",
     description: "Current live premium launch-card market tracked by this site."
   },
   {
@@ -121,7 +122,7 @@ export const productLines: {
     name: "AR Carddass Wanted",
     status: "live",
     shortName: "Wanted",
-    description: "Research-high references are staged separately from the live Formation market."
+    description: "Wanted cards use the same market logic as King Rare, with their own independent evidence."
   }
 ];
 
@@ -520,6 +521,50 @@ function mapEvidenceRecordToCollectorEvidence(record: EvidenceRecord): Collector
   };
 }
 
+function mapVersionSeedEvidenceToCollectorEvidence(
+  card: Card,
+  version: CardVersion
+): CollectorPricingEvidence[] {
+  const evidence: CollectorPricingEvidence[] = [];
+
+  if (version.resellerAskHighPhp && version.resellerAskHighPhp > 0) {
+    evidence.push({
+      id: `seed-ask-${version.id}`,
+      cardNumber: card.cardNumber,
+      version: version.versionCode,
+      evidenceType: "ACTIVE_LISTING",
+      pricePhp: version.resellerAskHighPhp,
+      condition: "NEAR_MINT",
+      sellerId: `seed:${card.cardNumber}`,
+      platform: card.researchPricingSource ? "Research seed" : "Static seed",
+      eventAt: new Date().toISOString(),
+      status: version.confidence === "Low" ? "REVIEW_REQUIRED" : "ACCEPTED",
+      conditionComparability: 1,
+      independenceConfidence: version.confidence === "High" ? 90 : version.confidence === "Moderate" ? 75 : 55
+    });
+  }
+
+  if (version.highestVerifiedSalePhp > 0 && version.latestVerifiedSaleAt) {
+    evidence.push({
+      id: `seed-sale-${version.id}`,
+      cardNumber: card.cardNumber,
+      version: version.versionCode,
+      evidenceType: "VERIFIED_SALE",
+      pricePhp: version.highestVerifiedSalePhp,
+      condition: "NEAR_MINT",
+      sellerId: `seed-sale:${card.cardNumber}`,
+      buyerId: `seed-buyer:${card.cardNumber}`,
+      platform: card.researchPricingSource ? "Research seed" : "Static seed",
+      eventAt: version.latestVerifiedSaleAt,
+      status: "ACCEPTED",
+      conditionComparability: 1,
+      independenceConfidence: version.confidence === "High" ? 90 : 75
+    });
+  }
+
+  return evidence;
+}
+
 export function applyCollectorPricingToCards(cardList: Card[]): Card[] {
   const collectorEvidence = evidenceRecords.map(mapEvidenceRecordToCollectorEvidence);
 
@@ -531,8 +576,9 @@ export function applyCollectorPricingToCards(cardList: Card[]): Card[] {
           evidence.cardNumber === card.cardNumber &&
           evidence.version === version.versionCode
       );
+      const seededEvidence = mapVersionSeedEvidenceToCollectorEvidence(card, version);
       const result = calculateCollectorPrice({
-        evidence: versionEvidence,
+        evidence: [...versionEvidence, ...seededEvidence],
         demandScore: version.demandScore,
         scarcityScore: version.scarcityScore
       });
@@ -593,7 +639,7 @@ export function getProductLineSetLabel(productLine: ProductLine, setCode: string
     return `Wanted ${setCode.replace(/^W/i, "")}`;
   }
 
-  return `Formation ${setCode.replace(/^F/i, "")}`;
+  return `King Rare ${setCode.replace(/^F/i, "")}`;
 }
 
 export function formatMarketUpdateAt(value?: string | null): string | null {

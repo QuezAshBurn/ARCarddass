@@ -13,7 +13,9 @@ export function CardGrid({ cards }: CardGridProps) {
       {cards.map((card) => {
         const primary = getPrimaryVersion(card);
         const isWantedResearch = card.productLine === "Wanted";
-        const productLineLabel = card.productLine === "Formation" ? "King Rare" : card.productLine;
+        const isPricingPending = primary.pricingState === "UNINITIALIZED";
+        const productLineLabel =
+          card.catalogueGroup ?? (card.productLine === "Formation" ? "King Rare" : card.productLine);
 
         return (
           <Link
@@ -34,8 +36,8 @@ export function CardGrid({ cards }: CardGridProps) {
             <div>
               <div className="card-row">
                 <h3>{card.characterName}</h3>
-                <span className={`pill ${isWantedResearch ? "review" : "live"}`}>
-                  {isWantedResearch ? "RESEARCH" : primary.pricingState}
+                <span className={`pill ${isPricingPending || isWantedResearch ? "review" : "live"}`}>
+                  {isPricingPending ? "PENDING" : isWantedResearch ? "RESEARCH" : primary.pricingState}
                 </span>
               </div>
               <span className="market-row-note">
@@ -47,7 +49,11 @@ export function CardGrid({ cards }: CardGridProps) {
             <div className="card-row">
               <span className="muted">{card.cardNumber}</span>
               <strong className="price-text">
-                {isWantedResearch ? `High ref ${formatPeso(primary.currentPublishedPricePhp)}` : formatPeso(primary.currentPublishedPricePhp)}
+                {isPricingPending
+                  ? "Pricing pending"
+                  : isWantedResearch
+                    ? `High ref ${formatPeso(primary.currentPublishedPricePhp)}`
+                    : formatPeso(primary.currentPublishedPricePhp)}
               </strong>
             </div>
             {isWantedResearch && card.researchPricingConfidence && (

@@ -42,10 +42,12 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
   const primary = getPrimaryVersion(card);
   const records = evidenceRecords.filter((record) => record.cardNumber === card.cardNumber);
   const isWantedResearch = card.productLine === "Wanted";
+  const isPricingPending = primary.pricingState === "UNINITIALIZED";
   const marketRange = getMarketRange(primary);
   const latestSoldAt = formatMarketUpdateAt(primary.latestVerifiedSaleAt);
-  const productLineLabel = card.productLine === "Formation" ? "King Rare" : card.productLine;
-  const setLabel = getProductLineSetLabel(card.productLine, getSetCode(card.cardNumber));
+  const productLineLabel =
+    card.catalogueGroup ?? (card.productLine === "Formation" ? "King Rare" : card.productLine);
+  const setLabel = card.catalogueGroup ?? getProductLineSetLabel(card.productLine, getSetCode(card.cardNumber));
 
   return (
     <>
@@ -71,12 +73,12 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             <div className="stat-card">
               <span>Collector Price</span>
               <strong>
-                <CollectorPrice value={primary.collectorPricePhp} compact />
+                {isPricingPending ? "Pricing pending" : <CollectorPrice value={primary.collectorPricePhp} compact />}
               </strong>
             </div>
             <div className="stat-card">
-              <span>{isWantedResearch ? "Research High Ref" : "Market Index"}</span>
-              <strong>{formatPeso(primary.currentPublishedPricePhp)}</strong>
+              <span>{isPricingPending ? "Market research" : isWantedResearch ? "Research High Ref" : "Market Index"}</span>
+              <strong>{isPricingPending ? "Awaiting evidence" : formatPeso(primary.currentPublishedPricePhp)}</strong>
             </div>
             <div className="stat-card">
               <span>Collector confidence</span>
@@ -85,12 +87,19 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
               </strong>
             </div>
           </div>
-          <p className="relationship-note">
-            <PriceRelationship
-              collectorPrice={primary.collectorPricePhp}
-              marketPrice={primary.currentPublishedPricePhp}
-            />
-          </p>
+          {card.cardStats && (
+            <p className="relationship-note">
+              Printed stats · HP {card.cardStats.hp} · AP {card.cardStats.ap} · DP {card.cardStats.dp} · SP {card.cardStats.sp}
+            </p>
+          )}
+          {!isPricingPending && (
+            <p className="relationship-note">
+              <PriceRelationship
+                collectorPrice={primary.collectorPricePhp}
+                marketPrice={primary.currentPublishedPricePhp}
+              />
+            </p>
+          )}
         </div>
       </section>
 
@@ -99,39 +108,47 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
           <span className="label">Collector pricing summary</span>
           <h2>Collector Price vs Market Index</h2>
           <p>
-            {isWantedResearch
+            {isPricingPending
+              ? "This Film Z card is catalogued from the supplied scan. Pricing stays unpublished until eligible raw-market and sold-listing evidence has been reviewed."
+              : isWantedResearch
               ? "Wanted pricing compares three buckets before publishing: sold items, active asking items, and formula-derived raw values such as graded-to-raw conversions. The Market Index uses the highest eligible reference, with thin comps marked for review."
               : "Collector Price estimates what a knowledgeable collector may reasonably pay based mainly on validated comparable sales. Market Index is the broader AR Carddass market price."}
           </p>
           <div className="pricing-summary-grid">
             <span>Collector Price</span>
-            <strong>{primary.collectorPricePhp ? formatPeso(primary.collectorPricePhp) : "Insufficient data"}</strong>
+            <strong>{isPricingPending ? "Pricing pending" : primary.collectorPricePhp ? formatPeso(primary.collectorPricePhp) : "Insufficient data"}</strong>
             <span>Fair Collector Range</span>
             <strong>
-              {primary.verifiedSaleLowPhp && primary.verifiedSaleHighPhp
+              {isPricingPending
+                ? "Awaiting verified sales"
+                : primary.verifiedSaleLowPhp && primary.verifiedSaleHighPhp
                 ? `${formatPeso(primary.verifiedSaleLowPhp)}-${formatPeso(primary.verifiedSaleHighPhp)}`
                 : "Insufficient verified sales"}
             </strong>
             <span>Market Index</span>
             <strong>
-              {isWantedResearch
+              {isPricingPending
+                ? "Pricing pending"
+                : isWantedResearch
                 ? `Research high ${formatPeso(primary.currentPublishedPricePhp)}`
                 : formatPeso(primary.currentPublishedPricePhp)}
             </strong>
             <span>Low Market</span>
-            <strong>{formatPeso(marketRange.lowMarketPhp)}</strong>
+            <strong>{isPricingPending ? "Pricing pending" : formatPeso(marketRange.lowMarketPhp)}</strong>
             <span>High Market</span>
-            <strong>{formatPeso(marketRange.highMarketPhp)}</strong>
+            <strong>{isPricingPending ? "Pricing pending" : formatPeso(marketRange.highMarketPhp)}</strong>
             <span>Quick-Sale Estimate</span>
-            <strong>{primary.quickSalePricePhp ? formatPeso(primary.quickSalePricePhp) : "Unavailable"}</strong>
+            <strong>{isPricingPending ? "Awaiting evidence" : primary.quickSalePricePhp ? formatPeso(primary.quickSalePricePhp) : "Unavailable"}</strong>
             <span>Reseller Ask Range</span>
             <strong>
-              {primary.resellerAskLowPhp && primary.resellerAskHighPhp
+              {isPricingPending
+                ? "Awaiting active asks"
+                : primary.resellerAskLowPhp && primary.resellerAskHighPhp
                 ? `${formatPeso(primary.resellerAskLowPhp)}–${formatPeso(primary.resellerAskHighPhp)}`
                 : "No active asks"}
             </strong>
             <span>Collector Tier</span>
-            <strong>{primary.collectorTier ?? "Unavailable"}</strong>
+            <strong>{isPricingPending ? "Awaiting evidence" : primary.collectorTier ?? "Unavailable"}</strong>
             {isWantedResearch && card.researchPricingConfidence && (
               <>
                 <span>Research basis</span>
@@ -148,16 +165,18 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
         <div className="grid three">
           <div className="stat-card">
             <span>Initial Reference</span>
-            <strong>{formatPeso(primary.initialReferencePricePhp)}</strong>
+              <strong>{isPricingPending ? "Pricing pending" : formatPeso(primary.initialReferencePricePhp)}</strong>
           </div>
           <div className="stat-card">
             <span>High-Water Reference</span>
-            <strong>{formatPeso(primary.highWaterReferencePhp)}</strong>
+              <strong>{isPricingPending ? "Pricing pending" : formatPeso(primary.highWaterReferencePhp)}</strong>
           </div>
           <div className="stat-card">
             <span>{isWantedResearch ? "Latest Sold Reference" : "Highest Verified Sale"}</span>
             <strong>
-              {primary.highestVerifiedSalePhp > 0
+              {isPricingPending
+                ? "Awaiting verified sale"
+                : primary.highestVerifiedSalePhp > 0
                 ? `${formatPeso(primary.highestVerifiedSalePhp)}${isWantedResearch && latestSoldAt ? ` · ${latestSoldAt}` : ""}`
                 : isWantedResearch
                   ? "Pending dated sale"
@@ -167,7 +186,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
         </div>
       </section>
 
-      <section className="shell section">
+      {!isPricingPending && <section className="shell section">
         <div className="grid two">
           <div className="content-card">
             <PriceMovementExplanation card={card} version={primary} />
@@ -176,9 +195,9 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             <PricingEvidenceSummary version={primary} />
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section className="shell section">
+      {!isPricingPending && <section className="shell section">
         <div className="grid two">
           <div className="content-card">
             <span className="label">Low-listing guardrail</span>
@@ -190,9 +209,9 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             </p>
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section className="shell section">
+      {!isPricingPending ? <section className="shell section">
         <div className="grid two">
           <div className="content-card">
             <span className="label">Price history</span>
@@ -220,7 +239,17 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             </p>
           </div>
         </div>
-      </section>
+      </section> : <section className="shell section">
+        <div className="content-card">
+          <span className="label">Market research status</span>
+          <h2>Pricing is intentionally unpublished.</h2>
+          <p>
+            This catalogue entry is ready for evidence collection. The price chart, demand,
+            scarcity, and collector estimate will appear only after raw listings and sold
+            references have been reviewed and initialized in Supabase.
+          </p>
+        </div>
+      </section>}
 
       <section className="shell section">
         <div className="section-head">
@@ -254,7 +283,9 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
                   <td data-label="Collector price">
                     <CollectorPrice value={version.collectorPricePhp} compact />
                   </td>
-                  <td data-label="Market index">{formatPeso(version.currentPublishedPricePhp)}</td>
+                  <td data-label="Market index">
+                    {version.pricingState === "UNINITIALIZED" ? "Pricing pending" : formatPeso(version.currentPublishedPricePhp)}
+                  </td>
                   <td data-label="Relationship">{version.versionRelationship}</td>
                   <td data-label="Evidence">
                     {version.directEvidence} direct &middot; {version.modeledEvidence} modeled

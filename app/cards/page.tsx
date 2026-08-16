@@ -11,8 +11,10 @@ const filterLabels = [
   "Wanted 02",
   "Wanted 03",
   "Wanted 04",
+  "Film Z",
   "KR",
   "SKR",
+  "OR",
   "R",
   "UC",
   "C",
@@ -26,6 +28,7 @@ const filterLabels = [
 type CataloguePageProps = {
   searchParams?: {
     line?: string;
+    group?: string;
   };
 };
 
@@ -34,20 +37,25 @@ export const dynamic = "force-dynamic";
 export default async function CataloguePage({ searchParams }: CataloguePageProps) {
   const cards = await getCardsWithLivePrices();
   const selectedLine = getProductLineBySlug(searchParams?.line);
-  const visibleCards = getCardsByProductLine(cards, selectedLine?.code);
+  const isFilmZ = searchParams?.group === "film-z";
+  const visibleCards = isFilmZ
+    ? cards.filter((card) => card.catalogueGroup === "Film Z")
+    : getCardsByProductLine(cards, selectedLine?.code);
   const wantedLine = productLines.find((line) => line.code === "Wanted");
+  const filmZCards = cards.filter((card) => card.catalogueGroup === "Film Z");
 
   return (
     <section className="shell section">
       <span className="eyebrow">Catalogue</span>
-      <h1>Built for King Rare and Wanted.</h1>
+      <h1>Built for King Rare, Wanted, and Film Z.</h1>
       <p>
-        King Rare and Wanted are separated at the product-line level so evidence,
+        King Rare and Wanted are separated at the product-line level, while Film Z
+        is a distinct Formation 04 catalogue group, so evidence,
         pricing, and market movement never mix between different AR Carddass lines.
       </p>
 
       <div className="series-switcher" aria-label="Product line filters">
-        <a className={`series-chip ${!selectedLine ? "active" : ""}`} href="/cards">
+        <a className={`series-chip ${!selectedLine && !isFilmZ ? "active" : ""}`} href="/cards">
           <span>All</span>
           <strong>{cards.length} catalogue cards</strong>
         </a>
@@ -67,6 +75,10 @@ export default async function CataloguePage({ searchParams }: CataloguePageProps
             </a>
           );
         })}
+        <a className={`series-chip ${isFilmZ ? "active" : ""}`} href="/cards?group=film-z">
+          <span>Film Z</span>
+          <strong>{filmZCards.length} catalogue cards</strong>
+        </a>
       </div>
 
       <div className="filters" aria-label="Available catalogue filters">

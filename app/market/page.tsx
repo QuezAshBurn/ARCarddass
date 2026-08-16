@@ -55,7 +55,9 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   await ensureMarketPricesFresh();
   const cards = await getCardsWithLivePrices();
   const selectedLine = getProductLineBySlug(searchParams?.line);
-  const productLineCards = getCardsByProductLine(cards, selectedLine?.code ?? "Formation");
+  const productLineCards = getCardsByProductLine(cards, selectedLine?.code ?? "Formation").filter(
+    (card) => card.versions[0]?.pricingState === "LIVE" || card.versions[0]?.pricingState === "FROZEN"
+  );
   const rarityFilter = searchParams?.rarity?.toUpperCase();
   const filteredCards =
     rarityFilter === "KR" || rarityFilter === "SKR"
@@ -83,10 +85,12 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
       <div className="series-switcher" aria-label="Market product line filters">
         <a className={`series-chip ${!selectedLine ? "active" : ""}`} href="/market">
           <span>Live market</span>
-          <strong>{getCardsByProductLine(cards, "Formation").length} tracked cards</strong>
+          <strong>{getCardsByProductLine(cards, "Formation").filter((card) => card.versions[0]?.pricingState === "LIVE" || card.versions[0]?.pricingState === "FROZEN").length} tracked cards</strong>
         </a>
         {productLines.map((line) => {
-          const lineCards = getCardsByProductLine(cards, line.code);
+          const lineCards = getCardsByProductLine(cards, line.code).filter(
+            (card) => card.versions[0]?.pricingState === "LIVE" || card.versions[0]?.pricingState === "FROZEN"
+          );
 
           return (
             <a

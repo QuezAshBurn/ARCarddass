@@ -12,6 +12,7 @@ export function CardFormation({ cards }: CardFormationProps) {
     <div className="card-formation">
       {cards.map((card, index) => {
         const primary = getPrimaryVersion(card);
+        const isPricingPending = primary.pricingState === "UNINITIALIZED";
 
         return (
           <Link
@@ -32,13 +33,17 @@ export function CardFormation({ cards }: CardFormationProps) {
             <div>
               <div className="card-row">
                 <h3>{card.characterName}</h3>
-                <span className="pill live">{primary.confidence}</span>
+                <span className={`pill ${isPricingPending ? "review" : "live"}`}>
+                  {isPricingPending ? "PENDING" : primary.confidence}
+                </span>
               </div>
-              <p>{card.cardNumber} · {getProductLineSetLabel(card.productLine, getSetCode(card.cardNumber))}</p>
+              <p>{card.cardNumber} · {card.catalogueGroup ?? getProductLineSetLabel(card.productLine, getSetCode(card.cardNumber))}</p>
             </div>
             <div className="card-row">
               <span className="muted">{card.rarity}</span>
-              <strong className="price-text">{formatPeso(primary.currentPublishedPricePhp)}</strong>
+              <strong className="price-text">
+                {isPricingPending ? "Pricing pending" : formatPeso(primary.currentPublishedPricePhp)}
+              </strong>
             </div>
           </Link>
         );

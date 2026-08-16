@@ -17,6 +17,8 @@ type CardMetadata = {
   research_pricing_source: string | null;
   research_pricing_url: string | null;
   research_pricing_confidence: string | null;
+  catalogue_group: string | null;
+  card_stats: unknown;
   sets: { name: string } | { name: string }[] | null;
   rarities: { code: string } | { code: string }[] | null;
 };
@@ -145,17 +147,31 @@ function toPricingState(state: string): PricingState {
   return "LIVE";
 }
 
-function createWantedCardFromDatabase(row: CardVersionPriceRow): Card | undefined {
+function getCardStats(value: unknown): Card["cardStats"] | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const stats = value as Record<string, unknown>;
+  const hp = Number(stats.hp);
+  const ap = Number(stats.ap);
+  const dp = Number(stats.dp);
+  const sp = Number(stats.sp);
+
+  return [hp, ap, dp, sp].every(Number.isFinite) ? { hp, ap, dp, sp } : undefined;
+}
+
+function createDatabaseCardFromDatabase(row: CardVersionPriceRow): Card | undefined {
   const metadata = getCardMetadata(row);
 
-  if (!metadata || metadata.product_line !== "Wanted") {
+  if (!metadata || (metadata.product_line !== "Wanted" && metadata.product_line !== "Formation")) {
     return undefined;
   }
 
   const rarity = getRelationValue(metadata.rarities, "code");
   const setName = getRelationValue(metadata.sets, "name");
 
-  if (rarity !== "R" && rarity !== "UC" && rarity !== "C") {
+  if (rarity !== "KR" && rarity !== "SKR" && rarity !== "OR" && rarity !== "R" && rarity !== "UC" && rarity !== "C") {
     return undefined;
   }
 
@@ -164,11 +180,12 @@ function createWantedCardFromDatabase(row: CardVersionPriceRow): Card | undefine
   const { accentA, accentB } = getAccentColors(rarity);
 
   return {
-    productLine: "Wanted",
+    productLine: metadata.product_line,
+    catalogueGroup: metadata.catalogue_group ?? undefined,
     cardNumber: metadata.card_number,
     printedNumber: metadata.printed_number ?? undefined,
     characterName: metadata.character_name,
-    formationSet: typeof setName === "string" ? setName : "Wanted",
+    formationSet: typeof setName === "string" ? setName : metadata.product_line,
     rarity,
     category: metadata.category ?? "Wanted card",
     pricingTier: 1,
@@ -178,8 +195,9 @@ function createWantedCardFromDatabase(row: CardVersionPriceRow): Card | undefine
     accentB: metadata.accent_b ?? accentB,
     summary:
       metadata.summary ??
-      "Database-backed Wanted card. Live pricing and marketplace evidence are maintained in Supabase.",
+      "Database-backed AR Carddass card. Live pricing and marketplace evidence are maintained in Supabase.",
     frontImagePath: metadata.front_image_path ?? "",
+    cardStats: getCardStats(metadata.card_stats),
     researchHighPricePhp: price,
     researchPricingSource: metadata.research_pricing_source ?? undefined,
     researchPricingUrl: metadata.research_pricing_url ?? undefined,
@@ -247,9 +265,9 @@ export async function getCardsWithLivePrices(): Promise<Card[]> {
   const { data, error } = await supabase
     .from("card_versions")
     .select(
-      "id,version_code,language,region,verification_status,pricing_state,initial_reference_price_php,high_water_reference_php,highest_verified_sale_php,current_published_price_php,current_calculated_price_php,last_market_update_at,cards(card_number,character_name,category,pricing_enabled,catalogue_status,front_image_path,product_line,printed_number,summary,accent_a,accent_b,research_pricing_source,research_pricing_url,research_pricing_confidence,sets(name),rarities(code))"
+      "id,version_code,language,region,verification_status,pricing_state,initial_reference_price_php,high_water_reference_php,highest_verified_sale_php,current_published_price_php,current_calculated_price_php,last_market_update_at,cards(card_number,character_name,category,pricing_enabled,catalogue_status,front_image_path,product_line,printed_number,summary,accent_a,accent_b,research_pricing_source,research_pricing_url,research_pricing_confidence,catalogue_group,card_stats,sets(name),rarities(code))"
     )
-    .in("pricing_state", ["LIVE", "FROZEN"]);
+    .in("pricing_state", ["UNINITIALIZED", "LIVE", "FROZEN"]);
 
   if (error || !data) {
     console.warn("Falling back to static card prices:", error?.message);
@@ -257,10 +275,12 @@ export async function getCardsWithLivePrices(): Promise<Card[]> {
   }
 
   const rows = data as CardVersionPriceRow[];
-  const wantedCards = rows
-    .map(createWantedCardFromDatabase)
-    .filter((card): card is Card => Boolean(card));
-  liveCards.push(...wantedCards);
+  const staticCardNumbers = new Set(liveCards.map((card) => card.cardNumber));
+  const databaseOnlyCards = rows
+    .map(createDatabaseCardFromDatabase)
+    .filter((card): card is Card => Boolean(card))
+    .filter((card) => card.productLine === "Wanted" || !staticCardNumbers.has(card.cardNumber));
+  liveCards.push(...databaseOnlyCards);
   const versionIds = rows.map((row) => row.id).filter(Boolean);
   const latestSnapshotsByVersionId = new Map<string, PriceSnapshotRow>();
   const collectorStateByCardAndVersion = new Map<string, MarketStateCollectorRow>();

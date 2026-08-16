@@ -10,13 +10,16 @@ export const dynamic = "force-dynamic";
 
 export default async function SetsPage() {
   const cards = await getCardsWithLivePrices();
-  const formationCards = getCardsByProductLine(cards, "Formation");
+  const formationCards = getCardsByProductLine(cards, "Formation").filter(
+    (card) => card.catalogueGroup !== "Film Z"
+  );
   const wantedCards = getCardsByProductLine(cards, "Wanted");
+  const filmZCards = cards.filter((card) => card.catalogueGroup === "Film Z");
 
   return (
     <section className="shell section">
       <span className="eyebrow">Product lines and sets</span>
-      <h1>King Rare and Wanted are live.</h1>
+      <h1>King Rare, Wanted, and Film Z.</h1>
       <p>
         Sets are grouped by AR Carddass product line so King Rare and Wanted use
         the same pricing logic without sharing evidence, pricing history, or
@@ -63,6 +66,24 @@ export default async function SetsPage() {
             </Link>
           );
         })}
+      </div>
+
+      <div className="section-head compact product-line-spacer">
+        <div>
+          <span className="label">Formation 04 catalogue group</span>
+          <h2>One Piece Film Z</h2>
+        </div>
+        <span className="pill review">{filmZCards.length} pricing pending</span>
+      </div>
+      <div className="grid two">
+        <Link className="content-card set-panel" data-set="F04" href="/cards?group=film-z">
+          <span className="label">F04 · OR</span>
+          <h2>Film Z official rare cards</h2>
+          <p>
+            {filmZCards.length} supplied scans are catalogued separately while raw-market
+            evidence is collected before any price is published.
+          </p>
+        </Link>
       </div>
 
       <div className="section">

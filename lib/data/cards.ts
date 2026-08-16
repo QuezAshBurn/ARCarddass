@@ -76,11 +76,12 @@ export type EvidenceRecord = {
 
 export type Card = {
   productLine: ProductLine;
+  catalogueGroup?: string;
   cardNumber: string;
   printedNumber?: string;
   characterName: string;
   formationSet: string;
-  rarity: "KR" | "SKR" | "R" | "UC" | "C";
+  rarity: "KR" | "SKR" | "OR" | "R" | "UC" | "C";
   category: string;
   pricingTier: 1;
   pricingEnabled: boolean;
@@ -89,6 +90,12 @@ export type Card = {
   accentB: string;
   summary: string;
   frontImagePath: string;
+  cardStats?: {
+    hp: number;
+    ap: number;
+    dp: number;
+    sp: number;
+  };
   researchHighPricePhp?: number;
   researchPricingSource?: string;
   researchPricingUrl?: string;

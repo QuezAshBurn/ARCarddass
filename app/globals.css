@@ -728,6 +728,7 @@ p {
 .card-formation > :nth-child(6) { grid-column: 7 / span 3; }
 .card-formation > :nth-child(7) { grid-column: 10 / span 3; }
 .card-formation > :nth-child(8) { grid-column: 5 / span 4; margin-top: -1rem; }
+.card-formation > :nth-child(n + 9) { grid-column: span 3; }
 
 .set-panel {
   position: relative;

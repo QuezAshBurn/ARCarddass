@@ -14,6 +14,7 @@ export const fetchCache = "force-no-store";
 export default async function HomePage() {
   await ensureMarketPricesFresh();
   const cards = await getCardsWithLivePrices();
+  const featuredKingRareCards = cards.filter((card) => card.productLine === "Formation").slice(0, 8);
   const summary = getMarketSummary(cards);
   const highest = [...cards].sort(
     (a, b) => getPrimaryVersion(b).currentPublishedPricePhp - getPrimaryVersion(a).currentPublishedPricePhp
@@ -80,7 +81,7 @@ export default async function HomePage() {
             Browse all cards
           </Link>
         </div>
-        <CardFormation cards={cards} />
+        <CardFormation cards={featuredKingRareCards} />
       </section>
 
       <section className="shell section">

@@ -10,7 +10,6 @@ import {
   selectAutomaticPricingAction,
   selectHighestMarketReference
 } from "@/lib/domain/pricing";
-import { applyCollectorPricingToCards, cards, getPrimaryVersion } from "@/lib/data/cards";
 
 describe("pricing state guard", () => {
   it("routes UNINITIALIZED to initial pricing and LIVE to weekly pricing", () => {
@@ -77,41 +76,6 @@ describe("initial pricing", () => {
 
   it("reverse models Boa HK ARS 10 evidence", () => {
     expect(reverseGradedRawValue(232400, "ARS", "10")).toBe(66400);
-  });
-
-  it("uses raw Wanted market references before graded fallback references", () => {
-    const luffy = getPrimaryVersion(cards.find((card) => card.cardNumber === "W02-02")!);
-    const nami = getPrimaryVersion(cards.find((card) => card.cardNumber === "W02-08")!);
-    const robin = getPrimaryVersion(cards.find((card) => card.cardNumber === "W02-16")!);
-    const buggy = getPrimaryVersion(cards.find((card) => card.cardNumber === "W02-22")!);
-    const usopp = getPrimaryVersion(cards.find((card) => card.cardNumber === "W03-12")!);
-    const chopper = getPrimaryVersion(cards.find((card) => card.cardNumber === "W01-12")!);
-
-    expect(luffy.currentPublishedPricePhp).toBe(18571);
-    expect(robin.currentPublishedPricePhp).toBe(2700);
-    expect(buggy.currentPublishedPricePhp).toBe(7354);
-    expect(usopp.currentPublishedPricePhp).toBe(4800);
-    expect(luffy.currentPublishedPricePhp).toBeGreaterThan(reverseGradedRawValue(65900, "PSA", "10"));
-    expect(nami.currentPublishedPricePhp).toBe(9200);
-    expect(chopper.currentPublishedPricePhp).toBe(3100);
-  });
-
-  it("keeps Wanted latest sold blank unless a dated completed sale exists", () => {
-    const boa = getPrimaryVersion(cards.find((card) => card.cardNumber === "W01-27")!);
-
-    expect(boa.highestVerifiedSalePhp).toBe(0);
-    expect(boa.latestVerifiedSaleAt).toBeNull();
-    expect(boa.currentPublishedPricePhp).toBe(43300);
-  });
-
-  it("applies the collector pricing pipeline to Wanted seeded asks", () => {
-    const pricedCards = applyCollectorPricingToCards(cards);
-    const boa = getPrimaryVersion(pricedCards.find((card) => card.cardNumber === "W01-27")!);
-
-    expect(boa.resellerAskCount).toBe(1);
-    expect(boa.resellerAskHighPhp).toBe(43300);
-    expect(boa.collectorPricePhp).toBeNull();
-    expect(boa.collectorPriceConfidence).toBe("INSUFFICIENT_DATA");
   });
 
   it("uplifts damaged evidence to NM-equivalent", () => {

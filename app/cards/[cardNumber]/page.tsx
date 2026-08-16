@@ -25,7 +25,9 @@ type CardDetailPageProps = {
 };
 
 export function generateStaticParams() {
-  return staticCards.map((card) => ({ cardNumber: card.cardNumber }));
+  return staticCards
+    .filter((card) => card.productLine === "Formation")
+    .map((card) => ({ cardNumber: card.cardNumber }));
 }
 
 export const dynamic = "force-dynamic";

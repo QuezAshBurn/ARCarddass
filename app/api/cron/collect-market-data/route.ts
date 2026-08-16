@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { cards } from "@/lib/data/cards";
 import { getServiceSupabaseClient } from "@/lib/database/supabase";
+import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 import { requireCronSecret } from "@/lib/http/cron";
 import { ingestEbayRawAsks } from "@/lib/server/ebay-marketplace-ingestion";
 import { getMarketplaceDiscoveryPreview } from "@/lib/server/marketplace-crawler";
@@ -14,6 +14,7 @@ export async function GET(request: Request) {
 
   const supabase = getServiceSupabaseClient();
   const now = new Date().toISOString();
+  const cards = await getCardsWithLivePrices();
   const discovery = getMarketplaceDiscoveryPreview(cards, new Date(now));
   let ingestion:
     | Awaited<ReturnType<typeof ingestEbayRawAsks>>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { applyCollectorPricingToCards, cards as staticCards } from "@/lib/data/cards";
+import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 import { getServiceSupabaseClient } from "@/lib/database/supabase";
 import { calculateMarketUpdateForVersion } from "@/lib/domain/market-updates";
 import { requireCronSecret } from "@/lib/http/cron";
@@ -168,6 +169,7 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
   }
 
   const versionRows = dbVersions as DbVersionRow[];
+  const catalogueCards = await getCardsWithLivePrices();
   const versionIds = versionRows.map((version) => version.id);
   const freshEvidenceVersionIds = new Set<string>();
   const materialEventIdsByVersionId = new Map<string, string[]>();
@@ -255,23 +257,23 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
 
   for (const dbVersion of versionRows) {
     const cardNumber = getCardNumber(dbVersion);
-    const staticCard = staticCardsWithCollectorPricing.find((card) => card.cardNumber === cardNumber);
-    const staticVersion = staticCard?.versions.find(
+    const catalogueCard = catalogueCards.find((card) => card.cardNumber === cardNumber);
+    const catalogueVersion = catalogueCard?.versions.find(
       (version) => version.versionCode === normalizeVersionCode(dbVersion.version_code)
     );
 
-    if (!staticCard || !staticVersion) {
+    if (!catalogueCard || !catalogueVersion) {
       continue;
     }
 
     const currentPublishedPricePhp = Number(dbVersion.current_published_price_php);
     const versionForCalculation = {
-      ...staticVersion,
+      ...catalogueVersion,
       currentPublishedPricePhp: Number.isFinite(currentPublishedPricePhp)
         ? Math.round(currentPublishedPricePhp)
-        : staticVersion.currentPublishedPricePhp
+        : catalogueVersion.currentPublishedPricePhp
     };
-    const update = calculateMarketUpdateForVersion(staticCard, versionForCalculation, {
+    const update = calculateMarketUpdateForVersion(catalogueCard, versionForCalculation, {
       hasFreshMaterialEvidence: freshEvidenceVersionIds.has(dbVersion.id),
       verifiedSaleCount: verifiedSaleKeysByVersionId.get(dbVersion.id)?.size
     });
@@ -309,22 +311,22 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
           raw_movement_percent: update.result.calculatedMovementPercent,
           capped_movement_percent: update.result.calculatedMovementPercent,
           calculated_price_php: nextPublishedPricePhp,
-          collector_price_php: staticVersion.collectorPricePhp,
-          collector_price_confidence: staticVersion.collectorPriceConfidence,
-          verified_sale_low_php: staticVersion.verifiedSaleLowPhp,
-          verified_sale_median_php: staticVersion.verifiedSaleMedianPhp,
-          verified_sale_high_php: staticVersion.verifiedSaleHighPhp,
-          verified_sale_count: staticVersion.verifiedSaleCount,
-          reseller_ask_low_php: staticVersion.resellerAskLowPhp,
-          reseller_ask_median_php: staticVersion.resellerAskMedianPhp,
-          reseller_ask_high_php: staticVersion.resellerAskHighPhp,
-          reseller_ask_count: staticVersion.resellerAskCount,
-          quick_sale_price_php: staticVersion.quickSalePricePhp,
-          collector_tier: staticVersion.collectorTier,
-          collector_price_updated_at: staticVersion.collectorPriceUpdatedAt,
-          collector_pricing_rule_version: staticVersion.collectorPricingRuleVersion,
+          collector_price_php: catalogueVersion.collectorPricePhp,
+          collector_price_confidence: catalogueVersion.collectorPriceConfidence,
+          verified_sale_low_php: catalogueVersion.verifiedSaleLowPhp,
+          verified_sale_median_php: catalogueVersion.verifiedSaleMedianPhp,
+          verified_sale_high_php: catalogueVersion.verifiedSaleHighPhp,
+          verified_sale_count: catalogueVersion.verifiedSaleCount,
+          reseller_ask_low_php: catalogueVersion.resellerAskLowPhp,
+          reseller_ask_median_php: catalogueVersion.resellerAskMedianPhp,
+          reseller_ask_high_php: catalogueVersion.resellerAskHighPhp,
+          reseller_ask_count: catalogueVersion.resellerAskCount,
+          quick_sale_price_php: catalogueVersion.quickSalePricePhp,
+          collector_tier: catalogueVersion.collectorTier,
+          collector_price_updated_at: catalogueVersion.collectorPriceUpdatedAt,
+          collector_pricing_rule_version: catalogueVersion.collectorPricingRuleVersion,
           published_price_php: nextPublishedPricePhp,
-          confidence: staticVersion.confidence,
+          confidence: catalogueVersion.confidence,
           methodology_version: methodologyVersion,
           pricing_rule_version: methodologyVersion,
           calculated_at: now.toISOString()
@@ -370,25 +372,25 @@ export async function runMarketPriceUpdate(options: MarketPriceUpdateOptions = {
       rarity: update.rarity,
       version: dbVersion.version_code,
       initial_reference_price_php:
-        Number(dbVersion.initial_reference_price_php) || staticVersion.initialReferencePricePhp,
+        Number(dbVersion.initial_reference_price_php) || catalogueVersion.initialReferencePricePhp,
       previous_published_price_php: update.basePublishedPricePhp,
       calculated_price_php: nextPublishedPricePhp,
       published_price_php: nextPublishedPricePhp,
-      collector_price_php: staticVersion.collectorPricePhp,
-      collector_price_confidence: staticVersion.collectorPriceConfidence,
-      verified_sale_low_php: staticVersion.verifiedSaleLowPhp,
-      verified_sale_median_php: staticVersion.verifiedSaleMedianPhp,
-      verified_sale_high_php: staticVersion.verifiedSaleHighPhp,
-      verified_sale_count: staticVersion.verifiedSaleCount,
-      reseller_ask_low_php: staticVersion.resellerAskLowPhp,
-      reseller_ask_median_php: staticVersion.resellerAskMedianPhp,
-      reseller_ask_high_php: staticVersion.resellerAskHighPhp,
-      reseller_ask_count: staticVersion.resellerAskCount,
-      quick_sale_price_php: staticVersion.quickSalePricePhp,
-      collector_tier: staticVersion.collectorTier,
-      collector_price_updated_at: staticVersion.collectorPriceUpdatedAt,
-      collector_pricing_rule_version: staticVersion.collectorPricingRuleVersion,
-      confidence: staticVersion.confidence.toUpperCase(),
+      collector_price_php: catalogueVersion.collectorPricePhp,
+      collector_price_confidence: catalogueVersion.collectorPriceConfidence,
+      verified_sale_low_php: catalogueVersion.verifiedSaleLowPhp,
+      verified_sale_median_php: catalogueVersion.verifiedSaleMedianPhp,
+      verified_sale_high_php: catalogueVersion.verifiedSaleHighPhp,
+      verified_sale_count: catalogueVersion.verifiedSaleCount,
+      reseller_ask_low_php: catalogueVersion.resellerAskLowPhp,
+      reseller_ask_median_php: catalogueVersion.resellerAskMedianPhp,
+      reseller_ask_high_php: catalogueVersion.resellerAskHighPhp,
+      reseller_ask_count: catalogueVersion.resellerAskCount,
+      quick_sale_price_php: catalogueVersion.quickSalePricePhp,
+      collector_tier: catalogueVersion.collectorTier,
+      collector_price_updated_at: catalogueVersion.collectorPriceUpdatedAt,
+      collector_pricing_rule_version: catalogueVersion.collectorPricingRuleVersion,
+      confidence: catalogueVersion.confidence.toUpperCase(),
       last_evidence_check_at: now.toISOString(),
       last_calculated_at: now.toISOString(),
       last_published_at: now.toISOString(),

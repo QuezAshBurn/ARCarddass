@@ -32,8 +32,8 @@ export default async function HomePage() {
             <h1>Relive the pull. Track the market.</h1>
             <p>
               Track premium AR Carddass cards with transparent PHP pricing based
-              on evidence, supply and demand, rarity, circulation, and twice-daily
-              market checks. King Rare is live now; Wanted is staged next.
+              on evidence, supply and demand, rarity, circulation, and hourly
+              market checks. King Rare is live now; Wanted is database-backed.
             </p>
             <div className="hero__actions">
               <Link className="button primary" href="/pull">
@@ -47,7 +47,7 @@ export default async function HomePage() {
               </Link>
             </div>
           </div>
-          <PullExperience />
+          <PullExperience cards={cards} />
         </div>
       </section>
 

@@ -4,7 +4,6 @@ import {
   type CollectorPricingEvidence,
   type CollectorTier
 } from "@/lib/domain/collector-pricing";
-import { wantedCards } from "@/lib/data/wanted-cards";
 
 export type PricingState =
   | "UNINITIALIZED"
@@ -395,8 +394,7 @@ export const cards: Card[] = [
     frontImagePath: "/assets/card-scans/f04-27-sogeking.png",
     versions: makeVersions("F04-27", 128000, 0.031, 86, 90, "High"),
     priceHistory: makeHistory(108000, 0.026)
-  },
-  ...wantedCards
+  }
 ];
 
 export const evidenceRecords: EvidenceRecord[] = [

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cards } from "@/lib/data/cards";
+import { cards, type Card } from "@/lib/data/cards";
 import { marketplaceSources } from "@/config/marketplace-sources";
 import {
   buildMarketplaceCrawlTargets,
@@ -7,6 +7,13 @@ import {
 } from "@/lib/server/marketplace-crawler";
 
 describe("marketplace crawler discovery", () => {
+  const wantedLuffy = {
+    productLine: "Wanted",
+    cardNumber: "W02-02",
+    printedNumber: "NO.02-02",
+    characterName: "Monkey D. Luffy"
+  } as Card;
+
   it("creates one marketplace target per card and source", () => {
     const targets = buildMarketplaceCrawlTargets(cards);
 
@@ -14,7 +21,7 @@ describe("marketplace crawler discovery", () => {
   });
 
   it("generates Wanted-aware marketplace search queries", () => {
-    const targets = buildMarketplaceCrawlTargets(cards);
+    const targets = buildMarketplaceCrawlTargets([wantedLuffy]);
     const luffyWantedEbay = targets.find(
       (target) => target.cardCode === "W02-02" && target.sourceCode === "ebay"
     );

@@ -1,6 +1,9 @@
-﻿import { PullExperience } from "@/components/pull/PullExperience";
+import { PullExperience } from "@/components/pull/PullExperience";
+import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
-export default function PullPage() {
+export default async function PullPage() {
+  const cards = await getCardsWithLivePrices();
+
   return (
     <section className="hero">
       <div className="page-shell hero__content">
@@ -14,7 +17,7 @@ export default function PullPage() {
             receive the complete static experience.
           </p>
         </div>
-        <PullExperience />
+        <PullExperience cards={cards} />
       </div>
     </section>
   );

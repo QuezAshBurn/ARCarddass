@@ -9,7 +9,7 @@ export function BoosterPack({ state = "sealed" }: BoosterPackProps) {
     <div className="booster-pack" data-state={state}>
       <Image
         src="/assets/ui/booster-pack-original-placeholder.svg"
-        alt="AR Formation digital collector pack"
+        alt="AR King Rare digital collector pack"
         width={760}
         height={1320}
         priority

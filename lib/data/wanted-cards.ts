@@ -1,4 +1,9 @@
 import type { Card, CardVersion, PricePoint } from "@/lib/data/cards";
+import {
+  reverseGradedRawValue,
+  selectHighestMarketReference,
+  type MarketReferenceCandidate
+} from "@/lib/domain/pricing";
 
 type WantedSourceConfidence = NonNullable<Card["researchPricingConfidence"]>;
 
@@ -15,6 +20,9 @@ type WantedCardInput = {
   source: string;
   sourceUrl?: string;
   sourceConfidence: WantedSourceConfidence;
+  lastSoldPhp?: number;
+  lastSoldAt?: string;
+  lastSoldSource?: string;
   demandScore: number;
   scarcityScore: number;
   sp: number;
@@ -29,7 +37,25 @@ function makeWantedHistory(basePrice: number): PricePoint[] {
   }));
 }
 
+function rawFromGradedAsk(
+  gradedPricePhp: number,
+  grader: Parameters<typeof reverseGradedRawValue>[1],
+  grade: Parameters<typeof reverseGradedRawValue>[2]
+) {
+  return reverseGradedRawValue(gradedPricePhp, grader, grade);
+}
+
+function highestMarketReference(candidates: MarketReferenceCandidate[]) {
+  return selectHighestMarketReference(candidates).pricePhp;
+}
+
+function isObservedAsk(input: WantedCardInput) {
+  return input.sourceConfidence === "Observed listing";
+}
+
 function makeWantedVersion(input: WantedCardInput): CardVersion[] {
+  const hasLastSold = Boolean(input.lastSoldPhp && input.lastSoldAt);
+
   return [
     {
       id: `${input.cardNumber}-JP`,
@@ -41,45 +67,48 @@ function makeWantedVersion(input: WantedCardInput): CardVersion[] {
         input.sourceConfidence === "Observed auction high"
           ? "confirmed"
           : "needs-review",
-      pricingState: "INITIALIZED",
+      pricingState: "LIVE",
       versionRelationship:
-        input.sourceConfidence === "Modeled estimate"
-          ? "High reference modeled from rarity, SP, character demand, and visible scarcity"
-          : "High reference captured from public listing/auction research",
+        input.sourceConfidence === "Modeled estimate" || input.sourceConfidence === "Needs review"
+          ? "Highest ask/reference modeled from rarity, SP, character demand, and visible scarcity"
+          : "Highest ask/reference captured from public listing research",
       currentPublishedPricePhp: input.highReferencePhp,
       initialReferencePricePhp: input.highReferencePhp,
       highWaterReferencePhp: input.highReferencePhp,
-      highestVerifiedSalePhp:
-        input.sourceConfidence === "Observed auction high" ? input.highReferencePhp : 0,
+      highestVerifiedSalePhp: hasLastSold ? input.lastSoldPhp ?? 0 : 0,
       weeklyChangePhp: 0,
       weeklyChangePercent: 0,
       lastMarketUpdateAt: null,
       collectorPricePhp: null,
       collectorPriceConfidence: "INSUFFICIENT_DATA",
-      verifiedSaleLowPhp: null,
-      verifiedSaleMedianPhp: null,
-      verifiedSaleHighPhp: null,
-      verifiedSaleCount: input.sourceConfidence === "Observed auction high" ? 1 : 0,
-      resellerAskLowPhp: input.sourceConfidence === "Observed listing" ? input.highReferencePhp : null,
-      resellerAskMedianPhp: input.sourceConfidence === "Observed listing" ? input.highReferencePhp : null,
-      resellerAskHighPhp: input.sourceConfidence === "Observed listing" ? input.highReferencePhp : null,
-      resellerAskCount: input.sourceConfidence === "Observed listing" ? 1 : 0,
+      verifiedSaleLowPhp: hasLastSold ? input.lastSoldPhp ?? null : null,
+      verifiedSaleMedianPhp: hasLastSold ? input.lastSoldPhp ?? null : null,
+      verifiedSaleHighPhp: hasLastSold ? input.lastSoldPhp ?? null : null,
+      verifiedSaleCount: hasLastSold ? 1 : 0,
+      latestVerifiedSaleAt: hasLastSold ? input.lastSoldAt : null,
+      resellerAskLowPhp: isObservedAsk(input) ? input.highReferencePhp : null,
+      resellerAskMedianPhp: isObservedAsk(input) ? input.highReferencePhp : null,
+      resellerAskHighPhp: isObservedAsk(input) ? input.highReferencePhp : null,
+      resellerAskCount: isObservedAsk(input) ? 1 : 0,
       quickSalePricePhp: null,
       collectorTier: null,
       collectorPriceUpdatedAt: null,
-      collectorPricingRuleVersion: "research-seed-1.0.0",
+      collectorPricingRuleVersion: "research-seed-1.1.0",
       demandScore: input.demandScore,
       scarcityScore: input.scarcityScore,
-      confidence:
-        input.sourceConfidence === "Modeled estimate" || input.sourceConfidence === "Needs review"
+      confidence: hasLastSold
+        ? "Moderate"
+        : input.sourceConfidence === "Modeled estimate" || input.sourceConfidence === "Needs review"
           ? "Low"
           : "Moderate",
-      directEvidence:
-        input.sourceConfidence === "Modeled estimate" || input.sourceConfidence === "Needs review"
+      directEvidence: hasLastSold
+        ? 2
+        : input.sourceConfidence === "Modeled estimate" || input.sourceConfidence === "Needs review"
           ? 0
           : 1,
-      modeledEvidence:
-        input.sourceConfidence === "Modeled estimate" || input.sourceConfidence === "Needs review"
+      modeledEvidence: hasLastSold
+        ? 1
+        : input.sourceConfidence === "Modeled estimate" || input.sourceConfidence === "Needs review"
           ? 4
           : 2
     }
@@ -87,6 +116,10 @@ function makeWantedVersion(input: WantedCardInput): CardVersion[] {
 }
 
 function wantedCard(input: WantedCardInput): Card {
+  const soldNote = input.lastSoldPhp && input.lastSoldAt
+    ? ` Latest sold reference: â‚±${input.lastSoldPhp.toLocaleString("en-PH")} on ${input.lastSoldAt}.`
+    : "";
+
   return {
     productLine: "Wanted",
     cardNumber: input.cardNumber,
@@ -96,11 +129,11 @@ function wantedCard(input: WantedCardInput): Card {
     rarity: input.rarity,
     category: input.category,
     pricingTier: 1,
-    pricingEnabled: false,
-    catalogueStatus: "seeded",
+    pricingEnabled: true,
+    catalogueStatus: "live",
     accentA: input.accentA,
     accentB: input.accentB,
-    summary: `${input.summary} High reference: ${input.sourceConfidence.toLowerCase()} at ₱${input.highReferencePhp.toLocaleString("en-PH")}.`,
+    summary: `${input.summary} Highest ask/reference: ${input.sourceConfidence.toLowerCase()} at â‚±${input.highReferencePhp.toLocaleString("en-PH")}.${soldNote}`,
     frontImagePath: input.frontImagePath,
     researchHighPricePhp: input.highReferencePhp,
     researchPricingSource: input.source,
@@ -119,10 +152,10 @@ export const wantedCards: Card[] = [
     set: "Wanted 01",
     rarity: "C",
     category: "Wanted poster character",
-    summary: "Core Straw Hat character with direct high-listing evidence and steady collector demand.",
+    summary: "Core Straw Hat character with direct high-ask evidence and steady collector demand.",
     frontImagePath: "/assets/card-scans/wanted/w01-05-zoro.png",
     highReferencePhp: 7400,
-    source: "Observed eBay listing around US$119.99 for 2011 AR Carddass Zoro Wanted.",
+    source: "Highest ask reference from eBay around US$119.99; Mercari exact Zoro 01-05 asks were lower.",
     sourceUrl: "https://www.ebay.com/sch/i.html?_nkw=2011+One+Piece+AR+Carddass+Zoro+Wanted+No.+01-05",
     sourceConfidence: "Observed listing",
     demandScore: 82,
@@ -138,11 +171,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 01",
     rarity: "UC",
     category: "Wanted poster character",
-    summary: "Uncommon Straw Hat card modeled below Zoro/Luffy but above common low-SP references.",
+    summary: "Uncommon Straw Hat card held above exact Mercari asks because public high-ask coverage is still thin.",
     frontImagePath: "/assets/card-scans/wanted/w01-10-sanji.png",
     highReferencePhp: 4500,
-    source: "Modeled from UC rarity, SP 2900, Straw Hat demand, and Wanted-line scarcity.",
-    sourceConfidence: "Modeled estimate",
+    source: "Modeled high ask after reviewing Mercari exact Sanji 01-10 asks and broader Straw Hat Wanted scarcity.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%82%B5%E3%83%B3%E3%82%B8%2001-10",
+    sourceConfidence: "Needs review",
     demandScore: 72,
     scarcityScore: 58,
     sp: 2900,
@@ -156,10 +190,13 @@ export const wantedCards: Card[] = [
     set: "Wanted 01",
     rarity: "UC",
     category: "Wanted poster character",
-    summary: "Visible public ask supports a modest high reference for this uncommon card.",
+    summary: "Highest visible Chopper reference compares raw marketplace asks against graded-implied raw value.",
     frontImagePath: "/assets/card-scans/wanted/w01-12-chopper.png",
-    highReferencePhp: 3100,
-    source: "Observed eBay listing around US$49.97 for Wanted Poster Chopper 01-12.",
+    highReferencePhp: highestMarketReference([
+      { bucket: "ASKING", label: "Raw marketplace ask", pricePhp: 3100 },
+      { bucket: "FORMULA", label: "PSA 9 graded ask converted to raw", pricePhp: rawFromGradedAsk(12300, "PSA", "9") }
+    ]),
+    source: "Highest raw reference selected from raw marketplace ask around â‚±3,100 versus eBay PSA 9/graded ask around â‚±12,300 reversed with PSA 9 Ã· 1.40.",
     sourceUrl: "https://www.ebay.com/sch/i.html?_nkw=one+piece+AR+carddass+wanted+poster+chopper+01-12",
     sourceConfidence: "Observed listing",
     demandScore: 68,
@@ -175,12 +212,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 01",
     rarity: "R",
     category: "Rare Wanted poster character",
-    summary: "Rare card with the strongest Yahoo closed-auction signal found during this pass.",
+    summary: "Rare card with a much higher active Mercari ask than the prior closed-auction reference.",
     frontImagePath: "/assets/card-scans/wanted/w01-27-boa-hancock.png",
-    highReferencePhp: 8100,
-    source: "Yahoo Japan closed-auction high reference around ¥20,800 for AR Carddass Hancock.",
-    sourceUrl: "https://auctions.yahoo.co.jp/closedsearch/closedsearch/AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%83%8F%E3%83%B3%E3%82%B3%E3%83%83%E3%82%AF/0/",
-    sourceConfidence: "Observed auction high",
+    highReferencePhp: 43300,
+    source: "Observed listing trail: previously captured Mercari JP exact Boa Hancock 01-27 around ¥111,111; collector-provided eBay active listing item 800456598933 added for next ask validation.",
+    sourceUrl: "https://www.ebay.com/itm/800456598933",
+    sourceConfidence: "Observed listing",
     demandScore: 84,
     scarcityScore: 72,
     sp: 3300,
@@ -194,11 +231,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 01",
     rarity: "C",
     category: "Wanted poster character",
-    summary: "Common card with pirate-captain character demand, but limited direct pricing evidence.",
+    summary: "Common card with pirate-captain character demand, but limited exact high-ask evidence.",
     frontImagePath: "/assets/card-scans/wanted/w01-36-kidd.png",
-    highReferencePhp: 1600,
-    source: "Modeled from C rarity, SP 1400, character demand, and sparse public listings.",
-    sourceConfidence: "Modeled estimate",
+    highReferencePhp: 5600,
+    source: "Needs-review high ask from related Kid AR Carddass public listings plus character-demand premium.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%82%AD%E3%83%83%E3%83%89",
+    sourceConfidence: "Needs review",
     demandScore: 58,
     scarcityScore: 45,
     sp: 1400,
@@ -212,11 +250,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 01",
     rarity: "C",
     category: "Wanted poster character",
-    summary: "Popular character, but this specific common Wanted reference still needs direct comps.",
+    summary: "Popular character; exact Mercari asks support a modest floor while demand keeps the high ask slightly above raw evidence.",
     frontImagePath: "/assets/card-scans/wanted/w01-39-law.png",
     highReferencePhp: 2500,
-    source: "Modeled from C rarity, Law demand premium, SP 1300, and low visible circulation.",
-    sourceConfidence: "Modeled estimate",
+    source: "Highest ask reference reviewed from Mercari exact Law 01-39 around Â¥4,555, rounded upward for demand.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%83%AD%E3%83%BC%2001-39",
+    sourceConfidence: "Needs review",
     demandScore: 78,
     scarcityScore: 52,
     sp: 1300,
@@ -230,11 +269,14 @@ export const wantedCards: Card[] = [
     set: "Wanted 02",
     rarity: "C",
     category: "Wanted poster character",
-    summary: "Main-character demand creates the largest high reference among common Wanted cards.",
+    summary: "Main-character demand creates a strong high reference by comparing raw marketplace asks against graded-implied raw value.",
     frontImagePath: "/assets/card-scans/wanted/w02-02-luffy.png",
-    highReferencePhp: 14000,
-    source: "Observed public listings around £170.23 / C$253.26 for Wanted Luffy 02-02.",
-    sourceUrl: "https://www.ebay.com/sch/i.html?_nkw=One+Piece+AR+Carddass+Formation+02+Luffy+02-02",
+    highReferencePhp: highestMarketReference([
+      { bucket: "ASKING", label: "Raw marketplace ask", pricePhp: 14000 },
+      { bucket: "FORMULA", label: "PSA 10 graded ask converted to raw", pricePhp: rawFromGradedAsk(65900, "PSA", "10") }
+    ]),
+    source: "Highest raw reference selected from raw marketplace asks around ₱14,000 versus eBay PSA 10 ask around ₱65,900 reversed with PSA 10 ÷ 6.00; collector-provided eBay active listing item 278201455485 added for next ask validation.",
+    sourceUrl: "https://www.ebay.com/itm/278201455485",
     sourceConfidence: "Observed listing",
     demandScore: 90,
     scarcityScore: 66,
@@ -249,11 +291,14 @@ export const wantedCards: Card[] = [
     set: "Wanted 02",
     rarity: "C",
     category: "Wanted poster character",
-    summary: "Direct high-listing evidence puts Nami well above most common Wanted references.",
+    summary: "Nami keeps the strongest researched Wanted reference by comparing raw marketplace asks against graded-implied raw value.",
     frontImagePath: "/assets/card-scans/wanted/w02-08-nami.png",
-    highReferencePhp: 9200,
-    source: "Observed eBay listing around US$149.99 for AR Carddass Wanted Nami 02-08.",
-    sourceUrl: "https://www.ebay.com/sch/i.html?_nkw=One+Piece+Nami+Card+AR+Carddass+Wanted+Poster+No.02-08",
+    highReferencePhp: highestMarketReference([
+      { bucket: "ASKING", label: "Raw marketplace ask", pricePhp: 9200 },
+      { bucket: "FORMULA", label: "PSA 10 graded ask converted to raw", pricePhp: rawFromGradedAsk(98100, "PSA", "10") }
+    ]),
+    source: "Highest raw reference selected from raw marketplace ask around â‚±9,200 versus eBay PSA 10 ask around â‚±98,100 reversed with PSA 10 Ã· 6.00.",
+    sourceUrl: "https://www.ebay.com/sch/i.html?_nkw=One+Piece+Nami+Card+AR+Carddass+F+Second+Formation+Rare+02-08+PSA+10",
     sourceConfidence: "Observed listing",
     demandScore: 80,
     scarcityScore: 60,
@@ -268,11 +313,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 02",
     rarity: "C",
     category: "Wanted poster character",
-    summary: "Common Wanted reference with character demand, but no strong direct high comp yet.",
+    summary: "Common Wanted reference with direct Mercari ask evidence and moderate character demand.",
     frontImagePath: "/assets/card-scans/wanted/w02-16-robin.png",
-    highReferencePhp: 1900,
-    source: "Modeled from C rarity, SP 1300, Robin demand, and sparse public comps.",
-    sourceConfidence: "Modeled estimate",
+    highReferencePhp: 2700,
+    source: "Highest ask reference from Mercari JP exact Robin 02-16 around Â¥7,000.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%83%AD%E3%83%93%E3%83%B3%2002-16",
+    sourceConfidence: "Observed listing",
     demandScore: 70,
     scarcityScore: 48,
     sp: 1300,
@@ -286,11 +332,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 02",
     rarity: "C",
     category: "Wanted poster character",
-    summary: "Common Wanted reference modeled from SP and lower visible demand than top Straw Hats.",
+    summary: "Common Wanted reference lifted from the prior floor because direct exact pricing remains thin.",
     frontImagePath: "/assets/card-scans/wanted/w02-18-franky.png",
-    highReferencePhp: 1400,
-    source: "Modeled from C rarity, SP 1400, and limited visible high-price evidence.",
-    sourceConfidence: "Modeled estimate",
+    highReferencePhp: 3500,
+    source: "Needs-review high ask from related Franky AR Carddass public listings and Wanted-line scarcity.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%83%95%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%BC",
+    sourceConfidence: "Needs review",
     demandScore: 50,
     scarcityScore: 42,
     sp: 1400,
@@ -304,10 +351,10 @@ export const wantedCards: Card[] = [
     set: "Wanted 02",
     rarity: "UC",
     category: "Wanted poster character",
-    summary: "Observed high listing gives Buggy a stronger reference than most uncommon cards.",
+    summary: "Observed high ask gives Buggy a stronger reference than most uncommon Wanted cards.",
     frontImagePath: "/assets/card-scans/wanted/w02-22-buggy.png",
     highReferencePhp: 7400,
-    source: "Observed eBay listing around US$119.99 for AR Carddass Second Formation Buggy 02-22.",
+    source: "Highest ask reference from eBay around US$119.99 for AR Carddass Second Formation Buggy 02-22.",
     sourceUrl: "https://www.ebay.com/sch/i.html?_nkw=One+Piece+AR+Carddass+Buggy+02-22",
     sourceConfidence: "Observed listing",
     demandScore: 64,
@@ -323,11 +370,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 02",
     rarity: "UC",
     category: "Wanted poster character",
-    summary: "Character popularity and UC rarity support a higher modeled reference while direct comps are thin.",
+    summary: "Ace has direct Mercari ask evidence and a strong character premium.",
     frontImagePath: "/assets/card-scans/wanted/w02-24-ace.png",
-    highReferencePhp: 5200,
-    source: "Modeled from UC rarity, SP 3100, Ace character premium, and low visible circulation.",
-    sourceConfidence: "Modeled estimate",
+    highReferencePhp: 7700,
+    source: "Highest ask reference from Mercari JP exact Ace 02-24 around Â¥19,800.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%82%A8%E3%83%BC%E3%82%B9%2002-24",
+    sourceConfidence: "Observed listing",
     demandScore: 86,
     scarcityScore: 60,
     sp: 3100,
@@ -341,11 +389,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 02",
     rarity: "C",
     category: "Wanted poster character",
-    summary: "Whitebeard gets a modest character-demand premium despite common rarity.",
+    summary: "Whitebeard receives a modest character-demand premium while exact high asks remain thin.",
     frontImagePath: "/assets/card-scans/wanted/w02-31-whitebeard.png",
-    highReferencePhp: 2100,
-    source: "Modeled from C rarity, SP 1500, Whitebeard demand, and limited public comps.",
-    sourceConfidence: "Modeled estimate",
+    highReferencePhp: 2500,
+    source: "Needs-review high ask from Mercari/eBay AR Carddass Whitebeard searches and character-demand premium.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E7%99%BD%E3%81%B2%E3%81%92%2002-31",
+    sourceConfidence: "Needs review",
     demandScore: 72,
     scarcityScore: 50,
     sp: 1500,
@@ -359,10 +408,10 @@ export const wantedCards: Card[] = [
     set: "Wanted 02",
     rarity: "R",
     category: "Rare Wanted poster character",
-    summary: "Rare card with a clear public high listing reference.",
+    summary: "Rare card with a clear public high-ask reference.",
     frontImagePath: "/assets/card-scans/wanted/w02-35-rayleigh.png",
     highReferencePhp: 12300,
-    source: "Observed eBay listing around US$200.00 for AR Carddass Rayleigh 02-35.",
+    source: "Highest ask reference from eBay around US$200.00 for AR Carddass Rayleigh 02-35.",
     sourceUrl: "https://www.ebay.com/sch/i.html?_nkw=One+Piece+Card+AR+Carddass+Second+Formation+02+No.35+SILVERS+RAYLEIGH",
     sourceConfidence: "Observed listing",
     demandScore: 82,
@@ -381,8 +430,9 @@ export const wantedCards: Card[] = [
     summary: "High SP and UC rarity lift Usopp above most common Wanted references.",
     frontImagePath: "/assets/card-scans/wanted/w03-12-usopp.png",
     highReferencePhp: 4800,
-    source: "Modeled from UC rarity, SP 3600, Straw Hat demand, and low visible circulation.",
-    sourceConfidence: "Modeled estimate",
+    source: "Needs-review high ask from Wanted-line rarity, SP 3600, Straw Hat demand, and sparse eBay/Mercari comps.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%82%A6%E3%82%BD%E3%83%83%E3%83%97%2003-12",
+    sourceConfidence: "Needs review",
     demandScore: 62,
     scarcityScore: 58,
     sp: 3600,
@@ -396,11 +446,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 03",
     rarity: "C",
     category: "Wanted poster character",
-    summary: "Common Wanted card with moderate Straw Hat demand and no strong public high comp yet.",
+    summary: "Common Wanted card with moderate Straw Hat demand and limited public high asks.",
     frontImagePath: "/assets/card-scans/wanted/w03-28-brook.png",
-    highReferencePhp: 1800,
-    source: "Modeled from C rarity, SP 1800, and limited direct market references.",
-    sourceConfidence: "Modeled estimate",
+    highReferencePhp: 2000,
+    source: "Needs-review high ask from Mercari/eBay Brook AR Carddass searches and Wanted 03 availability.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%83%96%E3%83%AB%E3%83%83%E3%82%AF%2003-28",
+    sourceConfidence: "Needs review",
     demandScore: 54,
     scarcityScore: 45,
     sp: 1800,
@@ -414,11 +465,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 03",
     rarity: "C",
     category: "Wanted poster character",
-    summary: "Low-demand common card kept near the modeled floor until better evidence appears.",
+    summary: "Lower-demand common card kept near the modeled floor until stronger high-ask evidence appears.",
     frontImagePath: "/assets/card-scans/wanted/w03-51-caribou.png",
-    highReferencePhp: 1400,
-    source: "Modeled from C rarity, SP 1500, lower character demand, and sparse listings.",
-    sourceConfidence: "Modeled estimate",
+    highReferencePhp: 1800,
+    source: "Needs-review high ask from rarity, SP 1500, lower character demand, and sparse public listings.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%82%AB%E3%83%AA%E3%83%96%E3%83%BC%2003-51",
+    sourceConfidence: "Needs review",
     demandScore: 35,
     scarcityScore: 42,
     sp: 1500,
@@ -432,11 +484,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 04",
     rarity: "R",
     category: "Rare Wanted poster character",
-    summary: "Rare, high-SP Mihawk card; no clean direct comp surfaced, so this stays modeled.",
+    summary: "Rare, high-SP Mihawk card; the highest public Mihawk AR reference is related rather than exact.",
     frontImagePath: "/assets/card-scans/wanted/w04-29-mihawk.jpg",
-    highReferencePhp: 12000,
-    source: "Modeled from R rarity, SP 5100, high character demand, and Wanted 04 scarcity.",
-    sourceConfidence: "Modeled estimate",
+    highReferencePhp: 12200,
+    source: "Needs-review high ask from Mercari related Mihawk AR Carddass around Â¥31,233; exact 04-29 still needs confirmation.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%83%9F%E3%83%9B%E3%83%BC%E3%82%AF%2004-29",
+    sourceConfidence: "Needs review",
     demandScore: 84,
     scarcityScore: 76,
     sp: 5100,
@@ -450,11 +503,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 04",
     rarity: "C",
     category: "Wanted poster character",
-    summary: "Common Wanted 04 card with moderate scarcity but limited direct price evidence.",
+    summary: "Common Wanted 04 card with moderate scarcity but limited exact high-ask evidence.",
     frontImagePath: "/assets/card-scans/wanted/w04-44-jinbei.png",
-    highReferencePhp: 2000,
-    source: "Modeled from C rarity, SP 2200, and Wanted 04 availability.",
-    sourceConfidence: "Modeled estimate",
+    highReferencePhp: 2200,
+    source: "Needs-review high ask from Jinbei AR Carddass searches, SP 2200, and Wanted 04 availability.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%82%B8%E3%83%B3%E3%83%99%E3%82%A8%2004-44",
+    sourceConfidence: "Needs review",
     demandScore: 52,
     scarcityScore: 50,
     sp: 2200,
@@ -468,12 +522,12 @@ export const wantedCards: Card[] = [
     set: "Wanted 04",
     rarity: "UC",
     category: "Wanted poster character",
-    summary: "Visible low ask exists, but character demand keeps this under watch for better comps.",
+    summary: "Shanks is lifted from the prior low exact ask because related high asks better reflect character demand.",
     frontImagePath: "/assets/card-scans/wanted/w04-60-shanks.png",
-    highReferencePhp: 1350,
-    source: "Observed eBay listing around US$22.00 for AR Carddass Shanks 04-60.",
-    sourceUrl: "https://www.ebay.com/sch/i.html?_nkw=One+Piece+AR+Carddass+Formation+04+Shanks+04-60",
-    sourceConfidence: "Observed listing",
+    highReferencePhp: 3500,
+    source: "Needs-review high ask from related Mercari Shanks AR Carddass around Â¥8,888; exact 04-60 eBay ask was lower.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%82%B7%E3%83%A3%E3%83%B3%E3%82%AF%E3%82%B9%2004-60",
+    sourceConfidence: "Needs review",
     demandScore: 82,
     scarcityScore: 48,
     sp: 1800,
@@ -487,10 +541,11 @@ export const wantedCards: Card[] = [
     set: "Wanted 04",
     rarity: "UC",
     category: "Wanted poster character",
-    summary: "The scan number needs confirmation; pricing is held as a modeled high reference.",
+    summary: "The scan number needs confirmation; pricing is held as a needs-review high ask.",
     frontImagePath: "/assets/card-scans/wanted/w04-arlong.png",
     highReferencePhp: 4300,
-    source: "Modeled from probable UC rarity, SP 3200, scan-visible stats, and incomplete card-number evidence.",
+    source: "Needs-review high ask from probable UC rarity, SP 3200, scan-visible stats, and incomplete card-number evidence.",
+    sourceUrl: "https://jp.mercari.com/search?keyword=%E3%83%AF%E3%83%B3%E3%83%94%E3%83%BC%E3%82%B9%20AR%E3%82%AB%E3%83%BC%E3%83%89%E3%83%80%E3%82%B9%20%E3%82%A2%E3%83%BC%E3%83%AD%E3%83%B3",
     sourceConfidence: "Needs review",
     demandScore: 48,
     scarcityScore: 56,

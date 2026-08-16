@@ -55,10 +55,7 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   await ensureMarketPricesFresh();
   const cards = await getCardsWithLivePrices();
   const selectedLine = getProductLineBySlug(searchParams?.line);
-  const productLineCards =
-    selectedLine?.code === "Wanted"
-      ? []
-      : getCardsByProductLine(cards, selectedLine?.code ?? "Formation");
+  const productLineCards = getCardsByProductLine(cards, selectedLine?.code ?? "Formation");
   const rarityFilter = searchParams?.rarity?.toUpperCase();
   const filteredCards =
     rarityFilter === "KR" || rarityFilter === "SKR"
@@ -98,7 +95,7 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
               key={line.code}
             >
               <span>{line.shortName}</span>
-              <strong>{line.code === "Wanted" ? `${lineCards.length} research refs` : `${lineCards.length} tracked`}</strong>
+              <strong>{lineCards.length} tracked</strong>
             </a>
           );
         })}
@@ -151,13 +148,11 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
         </>
       ) : (
         <div className="content-card coming-soon-panel">
-          <span className="label">Wanted market</span>
-          <h2>Wanted research highs stay separate from live pricing.</h2>
+          <span className="label">{selectedLine?.shortName ?? "Market"}</span>
+          <h2>No cards match this market filter yet.</h2>
           <p>
-            Wanted cards are now in the catalogue with high-reference research,
-            but they are not yet part of the automated Market Index. Once enough
-            verified sales and active asks are collected, Wanted can be activated
-            as its own independent market board.
+            Clear the current filter or choose another product line to view the
+            same demand, scarcity, market range, and evidence logic.
           </p>
         </div>
       )}

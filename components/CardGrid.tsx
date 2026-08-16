@@ -13,6 +13,7 @@ export function CardGrid({ cards }: CardGridProps) {
       {cards.map((card) => {
         const primary = getPrimaryVersion(card);
         const isWantedResearch = card.productLine === "Wanted";
+        const productLineLabel = card.productLine === "Formation" ? "King Rare" : card.productLine;
 
         return (
           <Link
@@ -38,7 +39,7 @@ export function CardGrid({ cards }: CardGridProps) {
                 </span>
               </div>
               <span className="market-row-note">
-                {card.productLine}
+                {productLineLabel}
                 {card.printedNumber ? ` · ${card.printedNumber}` : ""}
               </span>
               <p>{card.summary}</p>

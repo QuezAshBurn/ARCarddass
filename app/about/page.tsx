@@ -5,8 +5,8 @@
         <span className="label">About</span>
         <h1>Independent collector research, dressed like a rare pull.</h1>
         <p>
-          AR Formation Market is an independent collector pricing and evidence
-          guide for One Piece AR Carddass Formation cards. The interface uses
+          AR King Rare Market is an independent collector pricing and evidence
+          guide for One Piece AR Carddass King Rare cards. The interface uses
           original UI assets, original placeholder pack/card artwork, and a visual
           direction inspired by sealed-pack anticipation, foil card reveals, AR
           scanning, and collector archives.

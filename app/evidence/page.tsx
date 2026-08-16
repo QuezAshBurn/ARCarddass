@@ -1,6 +1,10 @@
 import { evidenceRecords, formatPeso } from "@/lib/data/cards";
 import { getPublicSupabaseClient } from "@/lib/database/supabase";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 type MarketEventRow = {
   id: string;
   card_code: string;

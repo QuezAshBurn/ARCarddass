@@ -19,6 +19,20 @@ export type InitialPricingCandidates = {
   highestDamageAdjustedNmPhp?: number;
 };
 
+export type MarketReferenceBucket = "SOLD" | "ASKING" | "FORMULA";
+
+export type MarketReferenceCandidate = {
+  bucket: MarketReferenceBucket;
+  label: string;
+  pricePhp?: number | null;
+};
+
+export type MarketReferenceSelection = {
+  bucket: MarketReferenceBucket;
+  label: string;
+  pricePhp: number;
+};
+
 export type MarketScoreInput = {
   transactionScore?: number;
   buyerIntentScore?: number;
@@ -60,6 +74,31 @@ export function calculateInitialReferencePrice(
   }
 
   return Math.max(...values);
+}
+
+export function selectHighestMarketReference(
+  candidates: MarketReferenceCandidate[]
+): MarketReferenceSelection {
+  const validCandidates = candidates
+    .map((candidate) => ({
+      ...candidate,
+      pricePhp:
+        typeof candidate.pricePhp === "number" && Number.isFinite(candidate.pricePhp)
+          ? Math.round(candidate.pricePhp)
+          : null
+    }))
+    .filter(
+      (candidate): candidate is MarketReferenceSelection =>
+        typeof candidate.pricePhp === "number" && candidate.pricePhp > 0
+    );
+
+  if (validCandidates.length === 0) {
+    throw new Error("At least one market reference candidate is required.");
+  }
+
+  return validCandidates.reduce((winner, candidate) =>
+    candidate.pricePhp > winner.pricePhp ? candidate : winner
+  );
 }
 
 export function reverseGradedRawValue(

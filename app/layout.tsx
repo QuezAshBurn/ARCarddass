@@ -5,9 +5,9 @@ import { LiquidRouteLayer } from "@/components/motion/LiquidRouteLayer";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AR Formation Market",
+  title: "AR King Rare Market",
   description:
-    "Independent collector market guide for One Piece AR Carddass Formation premium cards."
+    "Independent collector market guide for One Piece AR Carddass King Rare premium cards."
 };
 
 const navItems = [
@@ -35,10 +35,10 @@ export default function RootLayout({
         <LiquidRouteLayer />
         <header className="nav">
           <div className="shell nav-inner">
-            <Link href="/" className="brand" aria-label="AR Formation Market home">
+            <Link href="/" className="brand" aria-label="AR King Rare Market home">
               <Image
                 src="/assets/ui/one-piece-formation-logo.png"
-                alt="One Piece AR Carddass Formation"
+                alt="One Piece AR Carddass King Rare"
                 width={334}
                 height={145}
                 priority
@@ -57,7 +57,7 @@ export default function RootLayout({
         <main>{children}</main>
         <footer className="footer">
           <div className="shell">
-            AR Formation Market is an independent collector research and pricing
+            AR King Rare Market is an independent collector research and pricing
             project. It is not affiliated with or endorsed by Bandai, Shueisha,
             Toei Animation, Fuji Television, or the rights holders of ONE PIECE.
             Product names and images belong to their respective owners.

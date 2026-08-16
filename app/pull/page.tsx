@@ -13,7 +13,7 @@ export default async function PullPage() {
           <p>
             A visual collector reveal only — no real-money purchase, no odds, no
             gambling loop. Most three-card reveals contain Wanted and Film Z cards;
-            a 3% hit contains one shining King Rare or Secret King Rare. Skip Animation is always
+            a 3% hit contains one shining King Rare. Skip Animation is always
             available and reduced-motion users receive the complete static experience.
           </p>
         </div>

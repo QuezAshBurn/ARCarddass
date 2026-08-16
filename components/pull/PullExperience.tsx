@@ -41,7 +41,7 @@ function selectPackOutcome() {
 function isShinyHit(card: Card) {
   return card.productLine === "Formation" &&
     card.catalogueGroup !== "Film Z" &&
-    (card.rarity === "KR" || card.rarity === "SKR");
+    card.rarity === "KR";
 }
 
 function makeRevealCards(kingRarePool: Card[], standardPool: Card[]) {
@@ -124,11 +124,11 @@ export function PullExperience({ cards }: PullExperienceProps) {
       </div>
       <p className="muted">
         Random 3-card reveal: 97% are Wanted and Film Z cards. A 3% hit replaces one
-        regular card with a shining King Rare or Secret King Rare.
+        regular card with a shining King Rare.
       </p>
       {!canReveal && (
         <p className="muted">
-          Live King Rare/SKR plus Wanted or Film Z cards are needed to open a mixed pack.
+          Live King Rare plus Wanted or Film Z cards are needed to open a mixed pack.
         </p>
       )}
     </div>

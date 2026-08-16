@@ -508,6 +508,17 @@ p {
 .pull-cards > *:nth-child(2) { z-index: 2; transform: translateY(-12px); }
 .pull-cards > *:nth-child(3) { transform: rotate(13deg) translateX(-28px); }
 
+/* Pack pulls reserve foil light and spectrum effects for actual KR hits. */
+.pull-cards .foil-card:not([data-active="true"])::before,
+.pull-cards .foil-card:not([data-active="true"])::after,
+.pull-cards .foil-card:not([data-active="true"]):hover::before {
+  opacity: 0;
+}
+
+.pull-cards .foil-card:not([data-active="true"]):hover {
+  box-shadow: var(--shadow-card);
+}
+
 .pack-controls {
   display: flex;
   flex-wrap: wrap;

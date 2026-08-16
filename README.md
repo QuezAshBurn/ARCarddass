@@ -59,4 +59,4 @@ Authorization: Bearer <MARKET_EVENT_INGEST_SECRET>
 Idempotency-Key: <stable event key>
 ```
 
-The current implementation ships a data-driven public shell, deterministic pricing-rule code, Collector Price calculations, tests, Supabase schema scaffolding, public market APIs, and a protected evidence-ingestion boundary. Live marketplace collectors remain pluggable so marketplace/API credentials stay server-side and source failures do not create false market signals.
+The current implementation ships a data-driven public shell, deterministic pricing-rule code, Collector Price calculations, tests, Supabase schema scaffolding, public market APIs, and a protected evidence-ingestion boundary. Formation is live, and the catalogue/market structure is prepared for Wanted as a separate product line so evidence and pricing signals do not mix. Live marketplace collectors remain pluggable so marketplace/API credentials stay server-side and source failures do not create false market signals.

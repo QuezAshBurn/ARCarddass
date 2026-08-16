@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
-import { getPrimaryVersion } from "@/lib/data/cards";
+import { cards as staticCards, getHighMarketPrice, getLowMarketPrice, getPrimaryVersion } from "@/lib/data/cards";
 import { getPublicSupabaseClient } from "@/lib/database/supabase";
 
 export const dynamic = "force-dynamic";
@@ -122,6 +122,8 @@ export async function GET() {
       cards: states.map((state) => ({
         name: state.card_name,
         cardCode: state.card_code,
+        productLine:
+          staticCards.find((card) => card.cardNumber === state.card_code)?.productLine ?? "Formation",
         rarity: state.rarity,
         version: state.version,
         initialReferencePrice: asNumber(state.initial_reference_price_php),
@@ -129,6 +131,17 @@ export async function GET() {
         calculatedPrice: asNumber(state.calculated_price_php),
         publishedPrice: asNumber(state.published_price_php),
         marketPricePhp: asNumber(state.published_price_php),
+        lowMarketPricePhp: Math.min(
+          asNumber(state.quick_sale_price_php, asNumber(state.published_price_php) * 0.88),
+          asNumber(state.verified_sale_low_php, asNumber(state.published_price_php) * 0.88),
+          asNumber(state.reseller_ask_low_php, asNumber(state.published_price_php) * 0.88),
+          asNumber(state.initial_reference_price_php, asNumber(state.published_price_php) * 0.88)
+        ),
+        highMarketPricePhp: Math.max(
+          asNumber(state.published_price_php),
+          asNumber(state.verified_sale_high_php),
+          asNumber(state.reseller_ask_high_php)
+        ),
         collectorPricePhp: state.collector_price_php === null ? null : asNumber(state.collector_price_php),
         collectorPriceConfidence: state.collector_price_confidence ?? "INSUFFICIENT_DATA",
         verifiedSales: {
@@ -185,6 +198,7 @@ export async function GET() {
       return {
         name: card.characterName,
         cardCode: card.cardNumber,
+        productLine: card.productLine,
         rarity: card.rarity,
         version: version.versionCode,
         initialReferencePrice: version.initialReferencePricePhp,
@@ -192,6 +206,8 @@ export async function GET() {
         calculatedPrice: asNumber(snapshot?.calculated_price_php, publishedPrice),
         publishedPrice,
         marketPricePhp: publishedPrice,
+        lowMarketPricePhp: getLowMarketPrice(version),
+        highMarketPricePhp: getHighMarketPrice(version),
         collectorPricePhp: version.collectorPricePhp,
         collectorPriceConfidence: version.collectorPriceConfidence,
         verifiedSales: {

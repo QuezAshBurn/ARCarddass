@@ -27,12 +27,12 @@ export default async function HomePage() {
         <div className="page-shell hero__content">
           <div className="hero__copy">
             <FormationWordmark />
-            <span className="hero__eyebrow">One Piece AR Carddass Formation Market</span>
+            <span className="hero__eyebrow">One Piece AR Carddass Market</span>
             <h1>Relive the pull. Track the market.</h1>
             <p>
-              Track the rarest AR Carddass Formation cards with transparent PHP
-              pricing based on evidence, supply and demand, rarity, circulation,
-              and twice-daily market checks.
+              Track premium AR Carddass cards with transparent PHP pricing based
+              on evidence, supply and demand, rarity, circulation, and twice-daily
+              market checks. Formation is live now; Wanted is staged next.
             </p>
             <div className="hero__actions">
               <Link className="button primary" href="/pull">
@@ -73,8 +73,8 @@ export default async function HomePage() {
       <section className="shell section">
         <div className="section-head">
           <div>
-            <span className="label">Premium-card formation</span>
-            <h2>Eight launch cards, arranged like a collector formation.</h2>
+            <span className="label">Live product line</span>
+            <h2>Formation cards now, Wanted cards next.</h2>
           </div>
           <Link className="button secondary" href="/cards">
             Browse all cards

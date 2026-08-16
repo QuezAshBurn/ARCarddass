@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getHighMarketPrice, getLowMarketPrice } from "@/lib/data/cards";
 import { getCardWithLivePrices } from "@/lib/data/live-cards";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export async function GET(_request: Request, { params }: PricingRouteProps) {
   return NextResponse.json({
     cardNumber: card.cardNumber,
     characterName: card.characterName,
+    productLine: card.productLine,
     rarity: card.rarity,
     formationSet: card.formationSet,
     versions: Object.fromEntries(
@@ -29,6 +31,8 @@ export async function GET(_request: Request, { params }: PricingRouteProps) {
         {
           collectorPricePhp: version.collectorPricePhp,
           marketPricePhp: version.currentPublishedPricePhp,
+          lowMarketPricePhp: getLowMarketPrice(version),
+          highMarketPricePhp: getHighMarketPrice(version),
           verifiedSaleRange: {
             lowPhp: version.verifiedSaleLowPhp,
             medianPhp: version.verifiedSaleMedianPhp,

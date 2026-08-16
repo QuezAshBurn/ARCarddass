@@ -10,6 +10,13 @@ type PullExperienceProps = {
   cards: Card[];
 };
 
+const PACK_OUTCOMES = [
+  { wantedCount: 3, kingRareCount: 0, weight: 60 },
+  { wantedCount: 2, kingRareCount: 1, weight: 25 },
+  { wantedCount: 1, kingRareCount: 2, weight: 12 },
+  { wantedCount: 0, kingRareCount: 3, weight: 3 }
+] as const;
+
 function shuffleCards(cardPool: Card[]) {
   return [...cardPool].sort(() => Math.random() - 0.5);
 }
@@ -18,10 +25,32 @@ function takeRandom(cardPool: Card[], count: number) {
   return shuffleCards(cardPool).slice(0, count);
 }
 
+function selectPackOutcome() {
+  const roll = Math.random() * 100;
+  let runningWeight = 0;
+
+  for (const outcome of PACK_OUTCOMES) {
+    runningWeight += outcome.weight;
+
+    if (roll < runningWeight) {
+      return outcome;
+    }
+  }
+
+  return PACK_OUTCOMES[0];
+}
+
 function makeRevealCards(kingRarePool: Card[], wantedPool: Card[]) {
+  const outcome = selectPackOutcome();
+  const selectedWanted = takeRandom(wantedPool, outcome.wantedCount);
+  const selectedKingRares = takeRandom(kingRarePool, outcome.kingRareCount);
+  const missingCards = 3 - selectedWanted.length - selectedKingRares.length;
+  const fallbackPool = selectedWanted.length < outcome.wantedCount ? kingRarePool : wantedPool;
+
   return shuffleCards([
-    ...takeRandom(kingRarePool, 2),
-    ...takeRandom(wantedPool, 1)
+    ...selectedWanted,
+    ...selectedKingRares,
+    ...takeRandom(fallbackPool, missingCards)
   ]);
 }
 
@@ -87,9 +116,13 @@ export function PullExperience({ cards }: PullExperienceProps) {
           View Market
         </Link>
       </div>
+      <p className="muted">
+        Random 3-card reveal: 60% three Wanted cards, 25% two Wanted plus one King
+        Rare/SKR, 12% one Wanted plus two King Rare/SKR, and a 3% full King Rare/SKR hit.
+      </p>
       {!canReveal && (
         <p className="muted">
-          Wanted cards must be seeded in Supabase before mixed packs can be opened.
+          Live King Rare/SKR and Wanted cards are both needed to open a mixed pack.
         </p>
       )}
     </div>

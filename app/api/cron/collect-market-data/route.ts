@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     status: ingestion.status === "COMPLETED" ? "COMPLETED" : discovery.status,
     lastCheckAt: now,
     message:
-      "Marketplace crawl targets are configured. eBay active raw asks ingest automatically when EBAY_BROWSE_API_TOKEN or EBAY_ACCESS_TOKEN is configured; other marketplaces require official API, partner feed, or allowed connector credentials.",
+      "The collector enumerates every catalogue card. eBay active asks ingest automatically with an official eBay token; listings without an exact catalogue-number match are stored as review-required. Mercari, Yahoo Auctions, JDirectItems, and other sources require an approved API or partner-feed connector before they can write evidence.",
     ingestion,
     discovery
   });

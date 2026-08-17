@@ -13,16 +13,41 @@ jobs:
   collect-and-price:
     runs-on: ubuntu-latest
     steps:
-      - name: Collect marketplace data
+      - name: Verify scheduler secret
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl --fail --silent --show-error \
-            --retry 3 --retry-delay 5 \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://arcarddass.vercel.app/api/cron/collect-market-data"
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::GitHub Actions secret CRON_SECRET is missing. Add the same value used by Vercel."
+            exit 1
+          fi
 
-      - name: Publish the hourly price update
+      - name: Collect marketplace data
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl --fail --silent --show-error \
+          response_file="$(mktemp)"
+          status_code=$(curl --silent --show-error --output "$response_file" --write-out "%{http_code}" \
             --retry 3 --retry-delay 5 \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://arcarddass.vercel.app/api/cron/update-market-prices"
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "https://arcarddass.vercel.app/api/cron/collect-market-data")
+          cat "$response_file"
+          test "$status_code" -ge 200 -a "$status_code" -lt 300 || {
+            echo "::error::Collection endpoint returned HTTP $status_code. 401 means the GitHub and Vercel CRON_SECRET values differ; 500 means inspect Vercel runtime logs."
+            exit 1
+          }
+
+      - name: Publish the three-hour price update
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          response_file="$(mktemp)"
+          status_code=$(curl --silent --show-error --output "$response_file" --write-out "%{http_code}" \
+            --retry 3 --retry-delay 5 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "https://arcarddass.vercel.app/api/cron/update-market-prices")
+          cat "$response_file"
+          test "$status_code" -ge 200 -a "$status_code" -lt 300 || {
+            echo "::error::Price update endpoint returned HTTP $status_code. 401 means the GitHub and Vercel CRON_SECRET values differ; 500 means inspect Vercel runtime logs."
+            exit 1
+          }

@@ -1736,6 +1736,142 @@ tr:last-child td {
   line-height: 1.8;
 }
 
+.market-evidence-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.market-evidence-highlights {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.market-evidence-highlight,
+.market-evidence-item,
+.empty-evidence-state {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.market-evidence-highlight {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.9rem;
+}
+
+.market-evidence-highlight > span,
+.market-evidence-highlight small,
+.market-evidence-item p,
+.market-evidence-note,
+.empty-evidence-state p {
+  color: var(--text-muted);
+}
+
+.market-evidence-highlight > span {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.market-evidence-highlight strong,
+.market-evidence-price strong {
+  overflow-wrap: anywhere;
+  color: var(--ar-gold-200);
+  font-family: var(--font-ui);
+  font-size: clamp(1rem, 1.9vw, 1.35rem);
+  font-weight: 900;
+}
+
+.market-evidence-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.catalogue-research-reference {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid rgba(117, 234, 255, 0.22);
+  border-radius: var(--radius-md);
+  padding: 0.9rem;
+  background: rgba(117, 234, 255, 0.06);
+}
+
+.catalogue-research-reference > div {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.catalogue-research-reference p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.catalogue-research-reference a {
+  flex: 0 0 auto;
+  border: 1px solid rgba(117, 234, 255, 0.35);
+  border-radius: 999px;
+  padding: 0.6rem 0.8rem;
+  color: var(--ar-cyan-300);
+  font-family: var(--font-ui);
+  font-weight: 900;
+  text-align: center;
+}
+
+.market-evidence-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem 1rem;
+  padding: 0.9rem;
+}
+
+.market-evidence-item .pill {
+  margin-right: 0.55rem;
+}
+
+.market-evidence-item p {
+  margin: 0.45rem 0 0;
+}
+
+.market-evidence-price {
+  display: grid;
+  justify-items: end;
+  align-content: start;
+  gap: 0.25rem;
+  text-align: right;
+}
+
+.market-evidence-price small {
+  color: var(--ar-cyan-300);
+  font-weight: 800;
+}
+
+.market-evidence-price a {
+  color: var(--ar-cyan-300);
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.market-evidence-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.65rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.empty-evidence-state {
+  padding: 1rem;
+}
+
 .warning-note {
   border: 1px solid rgba(255, 200, 87, 0.22);
   border-radius: var(--radius-md);
@@ -1892,6 +2028,7 @@ tr:last-child td {
   .market-watch__hero,
   .automation-status,
   .automation-status__cards,
+  .market-evidence-highlights,
   .series-switcher,
   .watch-grid,
   .watch-flow,
@@ -1914,6 +2051,20 @@ tr:last-child td {
 
   .formation-wordmark {
     width: min(100%, 520px);
+  }
+
+  .market-evidence-item {
+    grid-template-columns: 1fr;
+  }
+
+  .catalogue-research-reference {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .market-evidence-price {
+    justify-items: start;
+    text-align: left;
   }
 
   .card-formation {

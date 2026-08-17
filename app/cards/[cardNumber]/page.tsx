@@ -6,6 +6,7 @@ import { PriceRelationship } from "@/components/PriceRelationship";
 import { PriceMovementExplanation } from "@/components/PriceMovementExplanation";
 import { PriceSparkline } from "@/components/PriceSparkline";
 import { PricingEvidenceSummary } from "@/components/PricingEvidenceSummary";
+import { MarketEvidencePanel } from "@/components/MarketEvidencePanel";
 import {
   cards as staticCards,
   evidenceRecords,
@@ -17,6 +18,7 @@ import {
   getSetCode
 } from "@/lib/data/cards";
 import { getCardWithLivePrices } from "@/lib/data/live-cards";
+import { getMarketEvidenceForCard } from "@/lib/data/market-evidence";
 
 type CardDetailPageProps = {
   params: {
@@ -40,6 +42,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
   }
 
   const primary = getPrimaryVersion(card);
+  const marketEvidence = await getMarketEvidenceForCard(card.cardNumber);
   const records = evidenceRecords.filter((record) => record.cardNumber === card.cardNumber);
   const isWantedResearch = card.productLine === "Wanted";
   const isPricingPending = primary.pricingState === "UNINITIALIZED";
@@ -196,6 +199,11 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
           </div>
         </div>
       </section>}
+
+      <MarketEvidencePanel
+        evidence={marketEvidence.evidence}
+        catalogueReference={marketEvidence.catalogueReference}
+      />
 
       {!isPricingPending && <section className="shell section">
         <div className="grid two">

@@ -50,6 +50,7 @@ type ActiveMarketplaceAsk = {
   grader: "PSA" | "BGS" | "CGC" | "ARS" | null;
   grade: string | null;
   rawEquivalentPhp: number | null;
+  exactMatch: boolean;
 };
 
 function getEbayAccessToken() {
@@ -115,6 +116,28 @@ function getComparableCondition(condition?: string): ConditionCategory {
   return "UNKNOWN";
 }
 
+function normalizeSearchText(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+/**
+ * eBay titles are often abbreviated. We accept an exact catalogue number as a
+ * strong signal; title-only character matches are retained for review instead
+ * of being allowed to change a price automatically.
+ */
+function isExactCardMatch(card: Card, title: string) {
+  const normalizedTitle = normalizeSearchText(title);
+  const normalizedCardNumber = normalizeSearchText(card.cardNumber);
+  const normalizedPrintedNumber = card.printedNumber
+    ? normalizeSearchText(card.printedNumber)
+    : "";
+
+  return (
+    normalizedTitle.includes(normalizedCardNumber) ||
+    (normalizedPrintedNumber.length >= 4 && normalizedTitle.includes(normalizedPrintedNumber))
+  );
+}
+
 async function searchEbayAsks(card: Card, limit = 50): Promise<ActiveMarketplaceAsk[]> {
   const accessToken = getEbayAccessToken();
 
@@ -177,7 +200,8 @@ async function searchEbayAsks(card: Card, limit = 50): Promise<ActiveMarketplace
         isGraded: Boolean(parsedGrade),
         grader: parsedGrade?.grader ?? null,
         grade: parsedGrade?.grade ?? null,
-        rawEquivalentPhp: parsedGrade ? parsedGrade.rawEquivalent(phpAmount) : null
+        rawEquivalentPhp: parsedGrade ? parsedGrade.rawEquivalent(phpAmount) : null,
+        exactMatch: isExactCardMatch(card, title)
       };
     })
     .filter((item): item is ActiveMarketplaceAsk => item !== null);
@@ -236,6 +260,8 @@ export async function ingestEbayRawAsks(options: {
   let insertedCount = 0;
   let checkedCardCount = 0;
   let highestRawAskPhp = 0;
+  let exactMatchCount = 0;
+  let reviewRequiredCount = 0;
 
   for (const card of options.cards) {
     const dbVersion = primaryVersionByCardNumber.get(card.cardNumber);
@@ -246,9 +272,13 @@ export async function ingestEbayRawAsks(options: {
     const asks = await searchEbayAsks(card);
 
     for (const ask of asks) {
+      const validationStatus = ask.exactMatch ? "ACCEPTED" : "REVIEW_REQUIRED";
+
       if (!ask.isGraded) {
         highestRawAskPhp = Math.max(highestRawAskPhp, ask.phpAmount);
       }
+      if (ask.exactMatch) exactMatchCount += 1;
+      if (!ask.exactMatch) reviewRequiredCount += 1;
       const eventInput: MarketEventInput = {
         cardCode: card.cardNumber,
         version: normalizeVersionCode(dbVersion.version_code),
@@ -264,14 +294,14 @@ export async function ingestEbayRawAsks(options: {
         phpAmount: ask.phpAmount,
         listingPrice: ask.phpAmount,
         condition: ask.condition,
-        validationStatus: "ACCEPTED",
+        validationStatus,
         sellerConfidence: 80,
         versionConfidence: 80,
         comparabilityConfidence: 80,
         evidenceConfidence: 85,
         notes: ask.isGraded
-          ? `Auto-ingested active graded ask: ${ask.title}. Raw-equivalent fallback is ${ask.rawEquivalentPhp ?? "unavailable"} PHP.`
-          : `Auto-ingested active raw ask: ${ask.title}`
+          ? `Auto-ingested active graded ask: ${ask.title}. Raw-equivalent fallback is ${ask.rawEquivalentPhp ?? "unavailable"} PHP.${ask.exactMatch ? " Exact catalogue-number match." : " Title needs catalogue-number review."}`
+          : `Auto-ingested active raw ask: ${ask.title}.${ask.exactMatch ? " Exact catalogue-number match." : " Title needs catalogue-number review."}`
       };
       const duplicateFingerprint = buildDuplicateFingerprint(eventInput);
       const { error: upsertError } = await options.supabase.from("market_events").upsert(
@@ -334,7 +364,9 @@ export async function ingestEbayRawAsks(options: {
       cursor: {
         checkedCardCount,
         insertedCount,
-        highestRawAskPhp
+        highestRawAskPhp,
+        exactMatchCount,
+        reviewRequiredCount
       },
       updated_at: now.toISOString()
     },
@@ -346,6 +378,8 @@ export async function ingestEbayRawAsks(options: {
     source: "ebay",
     insertedCount,
     checkedCardCount,
-    highestRawAskPhp
+    highestRawAskPhp,
+    exactMatchCount,
+    reviewRequiredCount
   };
 }

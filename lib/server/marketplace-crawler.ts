@@ -43,6 +43,7 @@ export function buildMarketplaceCrawlTargets(cards: Card[]): MarketplaceCrawlTar
   return cards.flatMap((card) => {
     const query = buildMarketplaceQuery({
       productLine: card.productLine,
+      catalogueGroup: card.catalogueGroup,
       cardNumber: card.cardNumber,
       characterName: card.characterName,
       printedNumber: card.printedNumber

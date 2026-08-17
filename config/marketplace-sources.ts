@@ -128,11 +128,17 @@ export const marketplaceSources: MarketplaceSource[] = [
 
 export function buildMarketplaceQuery(input: {
   productLine: ProductLine;
+  catalogueGroup?: string;
   cardNumber: string;
   characterName: string;
   printedNumber?: string;
 }) {
-  const lineTerm = input.productLine === "Wanted" ? "wanted" : "king rare";
+  const lineTerm =
+    input.catalogueGroup === "Film Z"
+      ? "Film Z"
+      : input.productLine === "Wanted"
+        ? "wanted"
+        : "king rare";
   const printedNumber = input.printedNumber ? ` ${input.printedNumber}` : "";
 
   return `One Piece AR Carddass ${lineTerm} ${input.characterName} ${input.cardNumber}${printedNumber}`;

@@ -33,6 +33,22 @@ export type MarketReferenceSelection = {
   pricePhp: number;
 };
 
+export type PrioritizedMarketReferenceCandidate = {
+  id: string;
+  eventType: string;
+  eventAt: string;
+  discoveredAt: string;
+  isGraded: boolean;
+  pricePhp: number | null;
+  rawEquivalentPricePhp: number | null;
+};
+
+export type PrioritizedMarketReference = {
+  eventId: string;
+  pricePhp: number;
+  priority: "RAW_SOLD_90_DAYS" | "RAW_ACTIVE_ASK" | "GRADED_TO_RAW_FALLBACK";
+};
+
 export type MarketScoreInput = {
   transactionScore?: number;
   buyerIntentScore?: number;
@@ -111,6 +127,87 @@ export function selectPublishedMarketReference(
   }
 
   return selectHighestMarketReference(candidates);
+}
+
+/**
+ * Chooses the public price reference in the collector-approved order.
+ *
+ * A raw completed sale in the last 90 days always wins, even where a live
+ * seller is asking more. A raw active ask is used only when there is no such
+ * sale. Graded evidence is deliberately a final fallback and must already
+ * carry a documented raw-equivalent value.
+ */
+export function selectPrioritizedMarketReference(
+  candidates: PrioritizedMarketReferenceCandidate[],
+  now = new Date(),
+  activeAskMaxAgeHours = 12
+): PrioritizedMarketReference | null {
+  const soldCutoff = now.getTime() - 90 * 24 * 60 * 60 * 1000;
+  const askCutoff = now.getTime() - activeAskMaxAgeHours * 60 * 60 * 1000;
+  const validPrice = (value: number | null): value is number =>
+    typeof value === "number" && Number.isFinite(value) && value > 0;
+  const highest = (items: PrioritizedMarketReferenceCandidate[], priceFor: (item: PrioritizedMarketReferenceCandidate) => number | null) =>
+    items.reduce<PrioritizedMarketReferenceCandidate | null>((winner, item) => {
+      const price = priceFor(item);
+      if (!validPrice(price)) return winner;
+      if (!winner || price > (priceFor(winner) ?? 0)) return item;
+      return winner;
+    }, null);
+
+  const rawSales = candidates.filter(
+    (candidate) =>
+      !candidate.isGraded &&
+      candidate.eventType === "VERIFIED_SALE" &&
+      new Date(candidate.eventAt).getTime() >= soldCutoff &&
+      validPrice(candidate.pricePhp)
+  );
+  const highestRawSale = highest(rawSales, (candidate) => candidate.pricePhp);
+  if (highestRawSale && validPrice(highestRawSale.pricePhp)) {
+    return {
+      eventId: highestRawSale.id,
+      pricePhp: Math.round(highestRawSale.pricePhp),
+      priority: "RAW_SOLD_90_DAYS"
+    };
+  }
+
+  const rawAsks = candidates.filter(
+    (candidate) =>
+      !candidate.isGraded &&
+      ["ACTIVE_LISTING", "NEW_LISTING"].includes(candidate.eventType) &&
+      new Date(candidate.discoveredAt).getTime() >= askCutoff &&
+      validPrice(candidate.pricePhp)
+  );
+  const highestRawAsk = highest(rawAsks, (candidate) => candidate.pricePhp);
+  if (highestRawAsk && validPrice(highestRawAsk.pricePhp)) {
+    return {
+      eventId: highestRawAsk.id,
+      pricePhp: Math.round(highestRawAsk.pricePhp),
+      priority: "RAW_ACTIVE_ASK"
+    };
+  }
+
+  const gradedFallbacks = candidates.filter((candidate) => {
+    if (!candidate.isGraded || !validPrice(candidate.rawEquivalentPricePhp)) return false;
+
+    if (candidate.eventType === "VERIFIED_SALE") {
+      return new Date(candidate.eventAt).getTime() >= soldCutoff;
+    }
+
+    return (
+      ["ACTIVE_LISTING", "NEW_LISTING"].includes(candidate.eventType) &&
+      new Date(candidate.discoveredAt).getTime() >= askCutoff
+    );
+  });
+  const highestGradedFallback = highest(gradedFallbacks, (candidate) => candidate.rawEquivalentPricePhp);
+  if (highestGradedFallback && validPrice(highestGradedFallback.rawEquivalentPricePhp)) {
+    return {
+      eventId: highestGradedFallback.id,
+      pricePhp: Math.round(highestGradedFallback.rawEquivalentPricePhp),
+      priority: "GRADED_TO_RAW_FALLBACK"
+    };
+  }
+
+  return null;
 }
 
 export function reverseGradedRawValue(

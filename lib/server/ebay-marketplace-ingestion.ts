@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Card } from "@/lib/data/cards";
 import { buildDuplicateFingerprint, type MarketEventInput } from "@/lib/domain/market-events";
 import type { ConditionCategory } from "@/lib/domain/market-rules";
+import { reverseGradedRawValue } from "@/lib/domain/pricing";
 
 const defaultUsdToPhpRate = 61.29;
 
@@ -35,7 +36,7 @@ type EbaySearchResponse = {
   itemSummaries?: EbayItemSummary[];
 };
 
-type ActiveRawAsk = {
+type ActiveMarketplaceAsk = {
   marketplaceListingId: string;
   title: string;
   sourceUrl: string;
@@ -45,6 +46,10 @@ type ActiveRawAsk = {
   phpAmount: number;
   condition: ConditionCategory;
   eventAt: string;
+  isGraded: boolean;
+  grader: "PSA" | "BGS" | "CGC" | "ARS" | null;
+  grade: string | null;
+  rawEquivalentPhp: number | null;
 };
 
 function getEbayAccessToken() {
@@ -72,8 +77,23 @@ function normalizeVersionCode(versionCode: string) {
   return versionCode === "CN" || versionCode === "TW" ? "HK" : versionCode;
 }
 
-function isLikelyGradedTitle(title: string) {
-  return /\b(PSA|CGC|BGS|ARS|GRADED|GEM\s*MINT|PRISTINE|BLACK\s*LABEL)\b/i.test(title);
+function parseGrade(title: string) {
+  const match = title.match(/\b(PSA|BGS|CGC|ARS)\s*(10\+|10\s+PRISTINE|10\s+GEM\s+MINT|9\.5|9|8\.5|8)\b/i);
+  if (!match) return null;
+
+  const grader = match[1].toUpperCase() as "PSA" | "BGS" | "CGC" | "ARS";
+  const grade = match[2].replace(/\s+/g, " ").replace(/gem mint/i, "Gem Mint").replace(/pristine/i, "Pristine");
+  const normalizedGrade = grader === "BGS" && grade === "10" ? "10 Pristine" : grade;
+
+  try {
+    return {
+      grader,
+      grade: normalizedGrade,
+      rawEquivalent: (pricePhp: number) => reverseGradedRawValue(pricePhp, grader, normalizedGrade)
+    };
+  } catch {
+    return null;
+  }
 }
 
 function convertToPhp(amount: number, currency: string) {
@@ -95,13 +115,14 @@ function getComparableCondition(condition?: string): ConditionCategory {
   return "UNKNOWN";
 }
 
-async function searchEbayRawAsks(card: Card, limit = 10): Promise<ActiveRawAsk[]> {
+async function searchEbayAsks(card: Card, limit = 50): Promise<ActiveMarketplaceAsk[]> {
   const accessToken = getEbayAccessToken();
 
   if (!accessToken) return [];
 
   const query = buildMarketplaceQuery({
     productLine: card.productLine,
+    catalogueGroup: card.catalogueGroup,
     cardNumber: card.cardNumber,
     characterName: card.characterName,
     printedNumber: card.printedNumber
@@ -136,12 +157,12 @@ async function searchEbayRawAsks(card: Card, limit = 10): Promise<ActiveRawAsk[]
         !item.itemId ||
         !item.itemWebUrl ||
         !title ||
-        isLikelyGradedTitle(title) ||
         !Number.isFinite(nativeAmount) ||
         !phpAmount
       ) {
         return null;
       }
+      const parsedGrade = parseGrade(title);
 
       return {
         marketplaceListingId: item.itemId,
@@ -152,10 +173,14 @@ async function searchEbayRawAsks(card: Card, limit = 10): Promise<ActiveRawAsk[]
         nativeAmount,
         phpAmount,
         condition: getComparableCondition(item.condition),
-        eventAt: item.itemCreationDate ?? now
+        eventAt: item.itemCreationDate ?? now,
+        isGraded: Boolean(parsedGrade),
+        grader: parsedGrade?.grader ?? null,
+        grade: parsedGrade?.grade ?? null,
+        rawEquivalentPhp: parsedGrade ? parsedGrade.rawEquivalent(phpAmount) : null
       };
     })
-    .filter((item): item is ActiveRawAsk => item !== null);
+    .filter((item): item is ActiveMarketplaceAsk => item !== null);
 }
 
 export async function ingestEbayRawAsks(options: {
@@ -218,10 +243,12 @@ export async function ingestEbayRawAsks(options: {
     if (!dbVersion) continue;
 
     checkedCardCount += 1;
-    const rawAsks = await searchEbayRawAsks(card);
+    const asks = await searchEbayAsks(card);
 
-    for (const ask of rawAsks) {
-      highestRawAskPhp = Math.max(highestRawAskPhp, ask.phpAmount);
+    for (const ask of asks) {
+      if (!ask.isGraded) {
+        highestRawAskPhp = Math.max(highestRawAskPhp, ask.phpAmount);
+      }
       const eventInput: MarketEventInput = {
         cardCode: card.cardNumber,
         version: normalizeVersionCode(dbVersion.version_code),
@@ -242,7 +269,9 @@ export async function ingestEbayRawAsks(options: {
         versionConfidence: 80,
         comparabilityConfidence: 80,
         evidenceConfidence: 85,
-        notes: `Auto-ingested active raw ask: ${ask.title}`
+        notes: ask.isGraded
+          ? `Auto-ingested active graded ask: ${ask.title}. Raw-equivalent fallback is ${ask.rawEquivalentPhp ?? "unavailable"} PHP.`
+          : `Auto-ingested active raw ask: ${ask.title}`
       };
       const duplicateFingerprint = buildDuplicateFingerprint(eventInput);
       const { error: upsertError } = await options.supabase.from("market_events").upsert(
@@ -259,12 +288,17 @@ export async function ingestEbayRawAsks(options: {
           event_type: eventInput.eventType,
           event_at: eventInput.eventAt,
           discovered_at: now.toISOString(),
+          processed_at: null,
           currency: eventInput.currency,
           native_amount: eventInput.nativeAmount,
           php_amount: eventInput.phpAmount,
           fx_rate: eventInput.currency === "USD" ? getUsdToPhpRate() : null,
           fx_rate_timestamp: now.toISOString(),
           listing_price: eventInput.listingPrice,
+          is_graded: ask.isGraded,
+          grader: ask.grader,
+          grade: ask.grade,
+          raw_equivalent_php: ask.rawEquivalentPhp,
           condition: eventInput.condition,
           condition_confidence: 70,
           validation_status: eventInput.validationStatus,

@@ -7,6 +7,7 @@ import {
   modelVersionPrices,
   reverseGradedRawValue,
   selectPublishedMarketReference,
+  selectPrioritizedMarketReference,
   selectAutomaticPricingAction,
   selectHighestMarketReference
 } from "@/lib/domain/pricing";
@@ -71,6 +72,53 @@ describe("initial pricing", () => {
       bucket: "FORMULA",
       label: "Only graded-to-raw conversion",
       pricePhp: 42903
+    });
+  });
+
+  it("prioritizes a recent raw sale, then a freshly observed raw ask, then graded conversion", () => {
+    const now = new Date("2026-08-17T00:00:00.000Z");
+    const rawAsk = {
+      id: "raw-ask",
+      eventType: "ACTIVE_LISTING",
+      eventAt: "2026-07-01T00:00:00.000Z",
+      discoveredAt: "2026-08-16T22:00:00.000Z",
+      isGraded: false,
+      pricePhp: 50000,
+      rawEquivalentPricePhp: null
+    };
+    const rawSale = {
+      id: "raw-sale",
+      eventType: "VERIFIED_SALE",
+      eventAt: "2026-08-01T00:00:00.000Z",
+      discoveredAt: "2026-08-01T00:00:00.000Z",
+      isGraded: false,
+      pricePhp: 42000,
+      rawEquivalentPricePhp: null
+    };
+    const graded = {
+      id: "graded",
+      eventType: "ACTIVE_LISTING",
+      eventAt: "2026-08-15T00:00:00.000Z",
+      discoveredAt: "2026-08-16T23:00:00.000Z",
+      isGraded: true,
+      pricePhp: 160000,
+      rawEquivalentPricePhp: 64000
+    };
+
+    expect(selectPrioritizedMarketReference([rawAsk, rawSale, graded], now)).toEqual({
+      eventId: "raw-sale",
+      pricePhp: 42000,
+      priority: "RAW_SOLD_90_DAYS"
+    });
+    expect(selectPrioritizedMarketReference([rawAsk, graded], now)).toEqual({
+      eventId: "raw-ask",
+      pricePhp: 50000,
+      priority: "RAW_ACTIVE_ASK"
+    });
+    expect(selectPrioritizedMarketReference([graded], now)).toEqual({
+      eventId: "graded",
+      pricePhp: 64000,
+      priority: "GRADED_TO_RAW_FALLBACK"
     });
   });
 

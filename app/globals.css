@@ -1911,7 +1911,7 @@ tr:last-child td {
 .traffic-filters {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
+  align-items: flex-end;
   gap: 0.9rem;
   padding: 1rem;
 }

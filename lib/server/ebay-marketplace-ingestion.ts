@@ -53,13 +53,68 @@ type ActiveMarketplaceAsk = {
   exactMatch: boolean;
 };
 
-function getEbayAccessToken() {
+type CachedEbayToken = {
+  value: string;
+  expiresAt: number;
+};
+
+let cachedEbayToken: CachedEbayToken | null = null;
+
+function getStaticEbayAccessToken() {
   return (
     process.env.EBAY_BROWSE_API_TOKEN ??
     process.env.EBAY_ACCESS_TOKEN ??
     process.env.EBAY_OAUTH_TOKEN ??
     null
   );
+}
+
+/**
+ * The Browse API uses an Application access token. When permanent application
+ * keys are configured, mint a fresh short-lived token for the current run so a
+ * scheduled collector never depends on a manually pasted, expired token.
+ */
+async function getEbayAccessToken() {
+  const staticToken = getStaticEbayAccessToken();
+  if (staticToken) return staticToken;
+
+  if (cachedEbayToken && cachedEbayToken.expiresAt > Date.now()) {
+    return cachedEbayToken.value;
+  }
+
+  const clientId = process.env.EBAY_CLIENT_ID;
+  const clientSecret = process.env.EBAY_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) return null;
+
+  const response = await fetch("https://api.ebay.com/identity/v1/oauth2/token", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: new URLSearchParams({
+      grant_type: "client_credentials",
+      scope: "https://api.ebay.com/oauth/api_scope"
+    }),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error(`eBay OAuth ${response.status}: ${await response.text()}`);
+  }
+
+  const payload = (await response.json()) as { access_token?: string; expires_in?: number };
+  if (!payload.access_token) {
+    throw new Error("eBay OAuth response did not include an access token.");
+  }
+
+  cachedEbayToken = {
+    value: payload.access_token,
+    expiresAt: Date.now() + Math.max(60, Number(payload.expires_in ?? 7200) - 60) * 1000
+  };
+
+  return cachedEbayToken.value;
 }
 
 function getUsdToPhpRate() {
@@ -138,10 +193,11 @@ function isExactCardMatch(card: Card, title: string) {
   );
 }
 
-async function searchEbayAsks(card: Card, limit = 50): Promise<ActiveMarketplaceAsk[]> {
-  const accessToken = getEbayAccessToken();
-
-  if (!accessToken) return [];
+async function searchEbayAsks(
+  card: Card,
+  accessToken: string,
+  limit = 50
+): Promise<ActiveMarketplaceAsk[]> {
 
   const query = buildMarketplaceQuery({
     productLine: card.productLine,
@@ -212,8 +268,32 @@ export async function ingestEbayRawAsks(options: {
   supabase: SupabaseClient;
   now?: Date;
 }) {
-  const accessToken = getEbayAccessToken();
   const now = options.now ?? new Date();
+  let accessToken: string | null;
+
+  try {
+    accessToken = await getEbayAccessToken();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await options.supabase.from("market_source_status").upsert(
+      {
+        source_code: "ebay",
+        status: "ERROR",
+        last_check_at: now.toISOString(),
+        error_message: message,
+        updated_at: now.toISOString()
+      },
+      { onConflict: "source_code" }
+    );
+
+    return {
+      status: "FAILED" as const,
+      source: "ebay",
+      insertedCount: 0,
+      checkedCardCount: 0,
+      message: "eBay authentication failed; existing evidence was left unchanged."
+    };
+  }
 
   if (!accessToken) {
     await options.supabase.from("market_source_status").upsert(
@@ -221,7 +301,7 @@ export async function ingestEbayRawAsks(options: {
         source_code: "ebay",
         status: "PENDING_CREDENTIALS",
         last_check_at: now.toISOString(),
-        error_message: "Set EBAY_BROWSE_API_TOKEN or EBAY_ACCESS_TOKEN in Vercel to ingest active raw eBay asks.",
+        error_message: "Set EBAY_CLIENT_ID and EBAY_CLIENT_SECRET in Vercel. The collector mints its own short-lived eBay token for each run.",
         updated_at: now.toISOString()
       },
       { onConflict: "source_code" }
@@ -232,7 +312,7 @@ export async function ingestEbayRawAsks(options: {
       source: "ebay",
       insertedCount: 0,
       checkedCardCount: 0,
-      message: "Missing eBay API token; discovery targets were generated but no prices were ingested."
+      message: "Missing eBay application credentials; discovery targets were generated but no prices were ingested."
     };
   }
 
@@ -269,7 +349,7 @@ export async function ingestEbayRawAsks(options: {
     if (!dbVersion) continue;
 
     checkedCardCount += 1;
-    const asks = await searchEbayAsks(card);
+    const asks = await searchEbayAsks(card, accessToken);
 
     for (const ask of asks) {
       const validationStatus = ask.exactMatch ? "ACCEPTED" : "REVIEW_REQUIRED";

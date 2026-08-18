@@ -16,6 +16,7 @@ export async function GET(request: Request) {
   const now = new Date().toISOString();
   const cards = await getCardsWithLivePrices();
   const discovery = getMarketplaceDiscoveryPreview(cards, new Date(now));
+  let crawlTargetCount: number | null = null;
   let ingestion:
     | Awaited<ReturnType<typeof ingestEbayRawAsks>>
     | { status: "SKIPPED_NO_SUPABASE"; message: string } = {
@@ -24,6 +25,16 @@ export async function GET(request: Request) {
   };
 
   if (supabase) {
+    const { data: syncedTargetCount, error: targetSyncError } = await supabase.rpc(
+      "refresh_market_crawl_targets"
+    );
+
+    if (targetSyncError) {
+      console.warn("Could not refresh the database crawl target queue:", targetSyncError.message);
+    } else {
+      crawlTargetCount = typeof syncedTargetCount === "number" ? syncedTargetCount : null;
+    }
+
     for (const source of discovery.sources) {
       await supabase.from("market_source_status").upsert(
         {
@@ -53,6 +64,7 @@ export async function GET(request: Request) {
     lastCheckAt: now,
     message:
       "The collector enumerates every catalogue card. eBay active asks ingest automatically with an official eBay token; listings without an exact catalogue-number match are stored as review-required. Mercari, Yahoo Auctions, JDirectItems, and other sources require an approved API or partner-feed connector before they can write evidence.",
+    crawlTargetCount,
     ingestion,
     discovery
   });

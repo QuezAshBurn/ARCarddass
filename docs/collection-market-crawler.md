@@ -29,11 +29,11 @@ catalogue and market events through the authenticated pricing API.
 
 ## Source coverage
 
-- **eBay:** active-listing import works automatically after `EBAY_BROWSE_API_TOKEN` (or `EBAY_ACCESS_TOKEN`) is configured in Vercel. It uses eBay's official Browse API and records both raw and graded listings.
+- **eBay:** active-listing import works automatically after `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` are configured in Vercel. The collector mints a fresh Application access token at run time, then uses eBay's official Browse API to record raw and graded listings. A static `EBAY_BROWSE_API_TOKEN` remains supported only as a temporary fallback.
 - **Mercari Japan, Yahoo Auctions, Yahoo Fleamarket, JDirectItems/Remambo, Mandarake, Suruga-ya, Rakuma:** the job creates traceable search targets for every card and reports their source status. They must be connected through an approved official API or licensed partner feed before their data can be imported automatically.
 
 The collector does not silently scrape protected marketplace pages. Every stored event requires a source URL, event date, original currency/value, and validation status. Ambiguous eBay title matches are saved as `REVIEW_REQUIRED`, so they appear in the public evidence trail but cannot move a price automatically.
 
 ## Automatic three-hour schedule
 
-`.github/workflows/hourly-market-watch.yml` runs the two endpoints every three hours at minute 17. Set the same `CRON_SECRET` in both **Vercel** and **GitHub Actions**. Set the eBay token in Vercel for real eBay imports.
+`.github/workflows/hourly-market-watch.yml` runs the two endpoints every three hours at minute 17. Set the same `CRON_SECRET` in both **Vercel** and **GitHub Actions**. Set `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` in Vercel for real eBay imports.

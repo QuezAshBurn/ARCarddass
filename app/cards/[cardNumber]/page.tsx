@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CardArt } from "@/components/CardArt";
 import { CollectorConfidenceBadge } from "@/components/CollectorConfidenceBadge";
@@ -17,7 +18,7 @@ import {
   getPrimaryVersion,
   getSetCode
 } from "@/lib/data/cards";
-import { getCardWithLivePrices } from "@/lib/data/live-cards";
+import { getCardWithLivePrices, getCardsWithLivePrices } from "@/lib/data/live-cards";
 import { getMarketEvidenceForCard } from "@/lib/data/market-evidence";
 
 type CardDetailPageProps = {
@@ -35,7 +36,10 @@ export function generateStaticParams() {
 export const dynamic = "force-dynamic";
 
 export default async function CardDetailPage({ params }: CardDetailPageProps) {
-  const card = await getCardWithLivePrices(params.cardNumber);
+  const [card, catalogueCards] = await Promise.all([
+    getCardWithLivePrices(params.cardNumber),
+    getCardsWithLivePrices()
+  ]);
 
   if (!card) {
     notFound();
@@ -51,6 +55,16 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
   const productLineLabel =
     card.catalogueGroup ?? (card.productLine === "Formation" ? "King Rare" : card.productLine);
   const setLabel = card.catalogueGroup ?? getProductLineSetLabel(card.productLine, getSetCode(card.cardNumber));
+  const currentCardIndex = catalogueCards.findIndex(
+    (catalogueCard) => catalogueCard.cardNumber.toLowerCase() === card.cardNumber.toLowerCase()
+  );
+  const hasCatalogueNavigation = catalogueCards.length > 1 && currentCardIndex >= 0;
+  const previousCard = hasCatalogueNavigation
+    ? catalogueCards[(currentCardIndex - 1 + catalogueCards.length) % catalogueCards.length]
+    : null;
+  const nextCard = hasCatalogueNavigation
+    ? catalogueCards[(currentCardIndex + 1) % catalogueCards.length]
+    : null;
 
   return (
     <>
@@ -102,6 +116,24 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
                 marketPrice={primary.currentPublishedPricePhp}
               />
             </p>
+          )}
+          {previousCard && nextCard && (
+            <nav className="card-detail-navigation" aria-label="Browse card catalogue">
+              <Link
+                className="card-navigation-link card-navigation-link--previous"
+                href={`/cards/${encodeURIComponent(previousCard.cardNumber)}`}
+              >
+                <span className="card-navigation-direction">&larr; Previous card</span>
+                <strong title={previousCard.characterName}>{previousCard.characterName}</strong>
+              </Link>
+              <Link
+                className="card-navigation-link card-navigation-link--next"
+                href={`/cards/${encodeURIComponent(nextCard.cardNumber)}`}
+              >
+                <span className="card-navigation-direction">Next card &rarr;</span>
+                <strong title={nextCard.characterName}>{nextCard.characterName}</strong>
+              </Link>
+            </nav>
           )}
         </div>
       </section>

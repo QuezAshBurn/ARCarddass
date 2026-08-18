@@ -1,6 +1,7 @@
 ﻿import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { TrafficTracker } from "@/components/TrafficTracker";
 import { LiquidRouteLayer } from "@/components/motion/LiquidRouteLayer";
 import "./globals.css";
 
@@ -33,6 +34,7 @@ export default function RootLayout({
       </head>
       <body>
         <LiquidRouteLayer />
+        <TrafficTracker />
         <header className="nav">
           <div className="shell nav-inner">
             <Link href="/" className="brand" aria-label="AR King Rare Market home">

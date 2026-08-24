@@ -822,6 +822,10 @@ p {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.grid.four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .stat-card {
   padding: 1.15rem;
 }
@@ -2024,6 +2028,269 @@ tr:last-child td {
   white-space: nowrap;
 }
 
+.catalogue-search-inline,
+.search-form {
+  display: flex;
+  gap: 0.75rem;
+  margin: 1.2rem 0;
+}
+
+.catalogue-search-inline input,
+.search-form input,
+.checklist-summary select {
+  min-height: 2.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.65rem 0.9rem;
+  background: rgba(8, 7, 12, 0.72);
+  color: var(--text-main);
+  font: inherit;
+}
+
+.catalogue-search-inline input,
+.search-form input {
+  width: min(100%, 34rem);
+}
+
+.knowledge-grid .content-card h2,
+.blog-card h2,
+.blog-featured h2,
+.related-posts h2 {
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+  letter-spacing: -0.02em;
+}
+
+.blog-featured,
+.blog-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.blog-featured {
+  margin: 1.4rem 0;
+  min-height: 14rem;
+  align-content: center;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 229, 138, 0.14), transparent 38%),
+    rgba(255, 255, 255, 0.045);
+}
+
+.blog-card small,
+.blog-featured small,
+.blog-meta {
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-weight: 800;
+}
+
+.blog-grid,
+.search-results,
+.set-guide-stats {
+  margin-top: 1.2rem;
+}
+
+.blog-article {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.blog-article > h1 {
+  max-width: 950px;
+}
+
+.markdown-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+  margin-top: 0.5rem;
+  font-family: var(--font-ui);
+  font-size: clamp(1.35rem, 3vw, 2.1rem);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.markdown-body p,
+.markdown-body li,
+.markdown-body blockquote {
+  color: var(--text-muted);
+  line-height: 1.72;
+}
+
+.markdown-body ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.markdown-body blockquote {
+  margin: 0;
+  border-left: 3px solid var(--ar-gold-400);
+  padding-left: 1rem;
+}
+
+.markdown-table-wrap {
+  overflow-x: auto;
+}
+
+.markdown-table-wrap table,
+.checklist-table,
+.admin-blog-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.markdown-table-wrap th,
+.markdown-table-wrap td,
+.checklist-table th,
+.checklist-table td,
+.admin-blog-table th,
+.admin-blog-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.markdown-table-wrap th,
+.checklist-table th,
+.admin-blog-table th {
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.related-posts {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.related-post-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.related-post-list a {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.85rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.related-post-list span {
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-weight: 800;
+}
+
+.checklist-app {
+  display: grid;
+  gap: 1rem;
+}
+
+.checklist-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 1rem;
+  align-items: end;
+}
+
+.checklist-summary strong {
+  color: var(--ar-gold-200);
+  font-family: var(--font-ui);
+  font-size: 2.3rem;
+  font-weight: 900;
+}
+
+.checklist-summary label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.checklist-table td[data-label="Card"],
+.admin-blog-table td[data-label="Post"] {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.checklist-table img {
+  width: 3rem;
+  aspect-ratio: 5 / 7;
+  border-radius: 0.35rem;
+  object-fit: cover;
+}
+
+.checklist-table span,
+.admin-blog-table span {
+  display: block;
+  color: var(--text-muted);
+}
+
+.checklist-table input[type="checkbox"] {
+  width: 1.3rem;
+  height: 1.3rem;
+  accent-color: var(--ar-gold-400);
+}
+
+.rarity-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.rarity-breakdown span {
+  border: 1px solid rgba(255, 229, 138, 0.22);
+  border-radius: 999px;
+  padding: 0.45rem 0.7rem;
+  color: var(--ar-gold-200);
+  background: rgba(255, 229, 138, 0.07);
+  font-family: var(--font-ui);
+  font-weight: 900;
+}
+
+.market-timeline {
+  display: grid;
+  gap: 1rem;
+}
+
+.market-timeline-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.market-timeline-item {
+  display: grid;
+  gap: 0.35rem;
+  border-left: 3px solid var(--ar-cyan-500);
+  padding: 0.4rem 0 0.4rem 0.9rem;
+}
+
+.market-timeline-item div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.market-timeline-item time {
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-weight: 900;
+}
+
 .timeline {
   display: grid;
   gap: 0.75rem;
@@ -2161,10 +2428,105 @@ tr:last-child td {
   .watch-flow,
   .price-explanation__prices,
   .price-explanation__signals,
+  .checklist-summary,
+  .grid.four,
   .grid.two,
   .grid.three,
   .grid.cards {
     grid-template-columns: 1fr;
+  }
+
+  .catalogue-search-inline,
+  .search-form {
+    display: grid;
+  }
+
+  .catalogue-search-inline input,
+  .search-form input,
+  .catalogue-search-inline .button,
+  .search-form .button {
+    width: 100%;
+  }
+
+  .checklist-table-wrap,
+  .admin-blog-table-wrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .checklist-table,
+  .checklist-table thead,
+  .checklist-table tbody,
+  .checklist-table tr,
+  .checklist-table th,
+  .checklist-table td,
+  .admin-blog-table,
+  .admin-blog-table thead,
+  .admin-blog-table tbody,
+  .admin-blog-table tr,
+  .admin-blog-table th,
+  .admin-blog-table td {
+    display: block;
+  }
+
+  .checklist-table thead,
+  .admin-blog-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .checklist-table tbody,
+  .admin-blog-table tbody {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .checklist-table tr,
+  .admin-blog-table tr {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    background: rgba(15, 13, 20, 0.82);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .checklist-table td,
+  .admin-blog-table td {
+    display: grid;
+    grid-template-columns: minmax(6rem, 0.42fr) minmax(0, 1fr);
+    gap: 0.65rem;
+    border-bottom: 0;
+    padding: 0.42rem 0;
+  }
+
+  .checklist-table td::before,
+  .admin-blog-table td::before {
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .checklist-table td[data-label="Card"],
+  .admin-blog-table td[data-label="Post"] {
+    display: flex;
+    grid-template-columns: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    padding-bottom: 0.75rem;
+  }
+
+  .checklist-table td[data-label="Card"]::before,
+  .admin-blog-table td[data-label="Post"]::before {
+    display: none;
   }
 
   .hero__content {

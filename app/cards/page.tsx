@@ -38,9 +38,13 @@ export default async function CataloguePage({ searchParams }: CataloguePageProps
   const cards = await getCardsWithLivePrices();
   const selectedLine = getProductLineBySlug(searchParams?.line);
   const isFilmZ = searchParams?.group === "film-z";
+  const isCoreKingRare = (card: (typeof cards)[number]) =>
+    card.productLine === "Formation" && card.catalogueGroup !== "Film Z";
   const visibleCards = isFilmZ
     ? cards.filter((card) => card.catalogueGroup === "Film Z")
-    : getCardsByProductLine(cards, selectedLine?.code);
+    : selectedLine?.code === "Formation"
+      ? cards.filter(isCoreKingRare)
+      : getCardsByProductLine(cards, selectedLine?.code);
   const wantedLine = productLines.find((line) => line.code === "Wanted");
   const filmZCards = cards.filter((card) => card.catalogueGroup === "Film Z");
 
@@ -54,13 +58,21 @@ export default async function CataloguePage({ searchParams }: CataloguePageProps
         pricing, and market movement never mix between different AR Carddass lines.
       </p>
 
+      <form className="catalogue-search-inline" action="/search">
+        <input name="q" placeholder="Search card code, character, rarity, set, or article" />
+        <button className="button secondary" type="submit">Search</button>
+      </form>
+
       <div className="series-switcher" aria-label="Product line filters">
         <a className={`series-chip ${!selectedLine && !isFilmZ ? "active" : ""}`} href="/cards">
           <span>All</span>
           <strong>{cards.length} catalogue cards</strong>
         </a>
         {productLines.map((line) => {
-          const lineCards = getCardsByProductLine(cards, line.code);
+          const lineCards =
+            line.code === "Formation"
+              ? cards.filter(isCoreKingRare)
+              : getCardsByProductLine(cards, line.code);
 
           return (
             <a

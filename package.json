@@ -10,7 +10,9 @@
                     "typecheck":  "tsc --noEmit",
                     "pricing:update":  "node scripts/market-pricing-demo.mjs",
                     "pricing:update:all":  "node scripts/market-pricing-all.mjs",
-                    "market:collect": "node scripts/run-market-collection.mjs"
+                    "market:collect": "node scripts/run-market-collection.mjs",
+                    "blog:spotlight": "node scripts/blog-spotlight.mjs",
+                    "blog:weekly": "node scripts/blog-weekly.mjs"
                 },
     "dependencies":  {
                          "@supabase/supabase-js":  "^2.45.4",

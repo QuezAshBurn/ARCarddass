@@ -8,6 +8,8 @@ import { PriceMovementExplanation } from "@/components/PriceMovementExplanation"
 import { PriceSparkline } from "@/components/PriceSparkline";
 import { PricingEvidenceSummary } from "@/components/PricingEvidenceSummary";
 import { MarketEvidencePanel } from "@/components/MarketEvidencePanel";
+import { MarketTimeline } from "@/components/MarketTimeline";
+import { getRelatedBlogPostsForCard } from "@/lib/data/blog";
 import {
   cards as staticCards,
   evidenceRecords,
@@ -36,9 +38,10 @@ export function generateStaticParams() {
 export const dynamic = "force-dynamic";
 
 export default async function CardDetailPage({ params }: CardDetailPageProps) {
-  const [card, catalogueCards] = await Promise.all([
+  const [card, catalogueCards, relatedPosts] = await Promise.all([
     getCardWithLivePrices(params.cardNumber),
-    getCardsWithLivePrices()
+    getCardsWithLivePrices(),
+    getRelatedBlogPostsForCard(params.cardNumber)
   ]);
 
   if (!card) {
@@ -236,6 +239,27 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
         evidence={marketEvidence.evidence}
         catalogueReference={marketEvidence.catalogueReference}
       />
+
+      <MarketTimeline evidence={marketEvidence.evidence} />
+
+      <section className="shell section">
+        <div className="content-card related-posts">
+          <span className="label">Related articles</span>
+          <h2>Collector reading</h2>
+          {relatedPosts.length ? (
+            <div className="related-post-list">
+              {relatedPosts.map((post) => (
+                <Link href={`/blog/${post.slug}`} key={post.id}>
+                  <strong>{post.title}</strong>
+                  <span>{post.category}</span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p>No published card spotlight yet. Drafts can be linked through the blog model once reviewed.</p>
+          )}
+        </div>
+      </section>
 
       {!isPricingPending && <section className="shell section">
         <div className="grid two">

@@ -38,9 +38,13 @@ export default async function CataloguePage({ searchParams }: CataloguePageProps
   const cards = await getCardsWithLivePrices();
   const selectedLine = getProductLineBySlug(searchParams?.line);
   const isFilmZ = searchParams?.group === "film-z";
+  const isCoreKingRare = (card: (typeof cards)[number]) =>
+    card.productLine === "Formation" && card.catalogueGroup !== "Film Z";
   const visibleCards = isFilmZ
     ? cards.filter((card) => card.catalogueGroup === "Film Z")
-    : getCardsByProductLine(cards, selectedLine?.code);
+    : selectedLine?.code === "Formation"
+      ? cards.filter(isCoreKingRare)
+      : getCardsByProductLine(cards, selectedLine?.code);
   const wantedLine = productLines.find((line) => line.code === "Wanted");
   const filmZCards = cards.filter((card) => card.catalogueGroup === "Film Z");
 
@@ -65,7 +69,10 @@ export default async function CataloguePage({ searchParams }: CataloguePageProps
           <strong>{cards.length} catalogue cards</strong>
         </a>
         {productLines.map((line) => {
-          const lineCards = getCardsByProductLine(cards, line.code);
+          const lineCards =
+            line.code === "Formation"
+              ? cards.filter(isCoreKingRare)
+              : getCardsByProductLine(cards, line.code);
 
           return (
             <a

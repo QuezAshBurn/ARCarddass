@@ -1,5 +1,5 @@
 import { CardGrid } from "@/components/CardGrid";
-import { getCardsByProductLine, getProductLineBySlug, productLines } from "@/lib/data/cards";
+import { getCardsByProductLine, getCoreKingRareCards, getProductLineBySlug, productLines } from "@/lib/data/cards";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
 const filterLabels = [
@@ -38,12 +38,10 @@ export default async function CataloguePage({ searchParams }: CataloguePageProps
   const cards = await getCardsWithLivePrices();
   const selectedLine = getProductLineBySlug(searchParams?.line);
   const isFilmZ = searchParams?.group === "film-z";
-  const isCoreKingRare = (card: (typeof cards)[number]) =>
-    card.productLine === "Formation" && card.catalogueGroup !== "Film Z";
   const visibleCards = isFilmZ
     ? cards.filter((card) => card.catalogueGroup === "Film Z")
     : selectedLine?.code === "Formation"
-      ? cards.filter(isCoreKingRare)
+      ? getCoreKingRareCards(cards)
       : getCardsByProductLine(cards, selectedLine?.code);
   const wantedLine = productLines.find((line) => line.code === "Wanted");
   const filmZCards = cards.filter((card) => card.catalogueGroup === "Film Z");
@@ -71,7 +69,7 @@ export default async function CataloguePage({ searchParams }: CataloguePageProps
         {productLines.map((line) => {
           const lineCards =
             line.code === "Formation"
-              ? cards.filter(isCoreKingRare)
+              ? getCoreKingRareCards(cards)
               : getCardsByProductLine(cards, line.code);
 
           return (

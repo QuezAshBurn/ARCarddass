@@ -3,7 +3,7 @@ import { CardFormation } from "@/components/cards/CardFormation";
 import { FormationWordmark } from "@/components/brand/FormationWordmark";
 import { MarketTable } from "@/components/MarketTable";
 import { PullExperience } from "@/components/pull/PullExperience";
-import { evidenceRecords, formatPeso, getMarketSummary, getPrimaryVersion } from "@/lib/data/cards";
+import { evidenceRecords, formatPeso, getCoreKingRareCards, getMarketSummary, getPrimaryVersion } from "@/lib/data/cards";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 import { ensureMarketPricesFresh } from "@/lib/server/market-price-cron";
 import { getBlogPosts } from "@/lib/data/blog";
@@ -12,10 +12,19 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
+function formatPublishedDate(value: string | null) {
+  if (!value) return "Review draft";
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime())
+    ? "Date unavailable"
+    : new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", year: "numeric" }).format(date);
+}
+
 export default async function HomePage() {
   await ensureMarketPricesFresh();
   const [cards, posts] = await Promise.all([getCardsWithLivePrices(), getBlogPosts()]);
-  const featuredKingRareCards = cards.filter((card) => card.productLine === "Formation").slice(0, 8);
+  const featuredKingRareCards = getCoreKingRareCards(cards).slice(0, 8);
   const summary = getMarketSummary(cards);
   const highest = [...cards].sort(
     (a, b) => getPrimaryVersion(b).currentPublishedPricePhp - getPrimaryVersion(a).currentPublishedPricePhp
@@ -23,6 +32,7 @@ export default async function HomePage() {
   const highestVersion = getPrimaryVersion(highest);
   const latestSale = evidenceRecords.find((record) => record.status === "sold");
   const latestStory = posts.find((post) => post.category === "Market Analysis") ?? posts[0];
+  const latestNewsletter = posts.find((post) => post.category === "Weekly Market Recap");
   const latestDiscovery = posts.find((post) => post.category === "Discovery");
   const collectorGuide = posts.find((post) => post.category === "Collector Guide");
 
@@ -121,6 +131,20 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+
+      {latestNewsletter && (
+        <section className="shell section">
+          <div className="content-card homepage-newsletter-card">
+            <span className="label">Latest AR Carddass news</span>
+            <h2>{latestNewsletter.title}</h2>
+            <p>{latestNewsletter.excerpt}</p>
+            <small>{formatPublishedDate(latestNewsletter.publishedAt)}</small>
+            <Link className="button secondary" href={`/blog/${latestNewsletter.slug}`}>
+              Read Market Watch &rarr;
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section className="shell section">
         <div className="section-head">

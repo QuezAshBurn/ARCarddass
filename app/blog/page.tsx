@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { blogCategories, getBlogPosts } from "@/lib/data/blog";
+import type { BlogCategory } from "@/lib/data/blog";
+import { getBlogPosts } from "@/lib/data/blog";
+import { formatMarketUpdateLabel, formatPeso, getPrimaryVersion } from "@/lib/data/cards";
+import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
 export const dynamic = "force-dynamic";
 
@@ -25,25 +28,50 @@ function formatDate(value: string | null) {
     : new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", year: "numeric" }).format(date);
 }
 
+const featuredBlogCategories: BlogCategory[] = [
+  "Market Analysis",
+  "Auction Watch",
+  "Card Spotlight",
+  "Collector Guide"
+];
+
 export default async function BlogPage({ searchParams }: BlogPageProps) {
-  const posts = await getBlogPosts({ category: searchParams?.category });
+  const [posts, latestMarketNewsPosts, cards] = await Promise.all([
+    getBlogPosts({ category: searchParams?.category }),
+    getBlogPosts({ category: "Weekly Market Recap" }),
+    getCardsWithLivePrices()
+  ]);
   const featured = posts[0];
   const newest = posts.slice(1);
+  const latestMarketNews = latestMarketNewsPosts[0];
+  const recentCardUpdates = [...cards]
+    .sort((a, b) => {
+      const aVersion = getPrimaryVersion(a);
+      const bVersion = getPrimaryVersion(b);
+      const aTime = aVersion.lastMarketUpdateAt ? new Date(aVersion.lastMarketUpdateAt).getTime() : 0;
+      const bTime = bVersion.lastMarketUpdateAt ? new Date(bVersion.lastMarketUpdateAt).getTime() : 0;
+
+      if (bTime !== aTime) return bTime - aTime;
+
+      return Math.abs(bVersion.weeklyChangePercent) - Math.abs(aVersion.weeklyChangePercent);
+    })
+    .slice(0, 4);
 
   return (
     <section className="shell section">
       <span className="eyebrow">Knowledge hub</span>
-      <h1>Blog, discoveries, and collector guides.</h1>
+      <h1>Market news and collector guides.</h1>
       <p>
-        Articles explain the live card database, evidence ledger, and pricing engine.
-        Market prices stay in Supabase market state, not inside article copy.
+        Articles explain the live card database, evidence ledger, pricing engine,
+        and card-by-card market movement. Market prices stay in Supabase market
+        state, while this page surfaces the latest story-worthy signals.
       </p>
 
       <div className="filters" aria-label="Blog categories">
         <Link className={`filter-chip ${!searchParams?.category ? "active" : ""}`} href="/blog">
           All published
         </Link>
-        {blogCategories.map((category) => (
+        {featuredBlogCategories.map((category) => (
           <Link
             className={`filter-chip ${searchParams?.category === category ? "active" : ""}`}
             href={`/blog?category=${encodeURIComponent(category)}`}
@@ -53,6 +81,20 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
           </Link>
         ))}
       </div>
+
+      {latestMarketNews && (
+        <Link className="content-card blog-newsletter-card" href={`/blog/${latestMarketNews.slug}`}>
+          <span className="label">Latest market news</span>
+          <h2>{latestMarketNews.title}</h2>
+          <p>{latestMarketNews.excerpt}</p>
+          <div className="blog-newsletter-meta">
+            <small>{formatDate(latestMarketNews.publishedAt)} · {latestMarketNews.author}</small>
+            {latestMarketNews.relatedCardCodes.length > 0 && (
+              <span>{latestMarketNews.relatedCardCodes.slice(0, 6).join(" · ")}</span>
+            )}
+          </div>
+        </Link>
+      )}
 
       {featured ? (
         <Link className="content-card blog-featured" href={`/blog/${featured.slug}`}>
@@ -71,6 +113,31 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
           </p>
         </div>
       )}
+
+      <div className="section-head compact-section-head">
+        <div>
+          <span className="label">Live card desk</span>
+          <h2>Latest card signals</h2>
+        </div>
+      </div>
+      <div className="grid four knowledge-grid">
+        {recentCardUpdates.map((card) => {
+          const primary = getPrimaryVersion(card);
+
+          return (
+            <Link className="content-card blog-card" href={`/cards/${card.cardNumber}`} key={card.cardNumber}>
+              <span className="label">{card.catalogueGroup ?? card.productLine} · {card.rarity}</span>
+              <h2>{card.characterName}</h2>
+              <p>
+                {formatPeso(primary.currentPublishedPricePhp)} market index ·{" "}
+                {primary.weeklyChangePercent >= 0 ? "+" : ""}
+                {primary.weeklyChangePercent.toFixed(2)}% this update.
+              </p>
+              <small>{formatMarketUpdateLabel(primary.lastMarketUpdateAt)}</small>
+            </Link>
+          );
+        })}
+      </div>
 
       <div className="grid three blog-grid">
         {newest.map((post) => (

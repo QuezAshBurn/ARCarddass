@@ -15,6 +15,7 @@ import {
   evidenceRecords,
   formatMarketUpdateAt,
   formatPeso,
+  getCoreKingRareCards,
   getMarketRange,
   getProductLineSetLabel,
   getPrimaryVersion,
@@ -30,9 +31,7 @@ type CardDetailPageProps = {
 };
 
 export function generateStaticParams() {
-  return staticCards
-    .filter((card) => card.productLine === "Formation")
-    .map((card) => ({ cardNumber: card.cardNumber }));
+  return getCoreKingRareCards(staticCards).map((card) => ({ cardNumber: card.cardNumber }));
 }
 
 export const dynamic = "force-dynamic";
@@ -41,7 +40,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
   const [card, catalogueCards, relatedPosts] = await Promise.all([
     getCardWithLivePrices(params.cardNumber),
     getCardsWithLivePrices(),
-    getRelatedBlogPostsForCard(params.cardNumber)
+    getRelatedBlogPostsForCard(params.cardNumber, 8)
   ]);
 
   if (!card) {
@@ -68,6 +67,8 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
   const nextCard = hasCatalogueNavigation
     ? catalogueCards[(currentCardIndex + 1) % catalogueCards.length]
     : null;
+  const latestNewsPosts = relatedPosts.filter((post) => post.category === "Weekly Market Recap").slice(0, 3);
+  const collectorReadingPosts = relatedPosts.filter((post) => post.category !== "Weekly Market Recap").slice(0, 4);
 
   return (
     <>
@@ -242,13 +243,30 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
 
       <MarketTimeline evidence={marketEvidence.evidence} />
 
+      {latestNewsPosts.length > 0 && (
+        <section className="shell section">
+          <div className="content-card related-posts card-news-card">
+            <span className="label">Latest News</span>
+            <h2>Market watch mentions</h2>
+            <div className="related-post-list">
+              {latestNewsPosts.map((post) => (
+                <Link href={`/blog/${post.slug}`} key={post.id}>
+                  <strong>{post.title}</strong>
+                  <span>{post.excerpt}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="shell section">
         <div className="content-card related-posts">
           <span className="label">Related articles</span>
           <h2>Collector reading</h2>
-          {relatedPosts.length ? (
+          {collectorReadingPosts.length ? (
             <div className="related-post-list">
-              {relatedPosts.map((post) => (
+              {collectorReadingPosts.map((post) => (
                 <Link href={`/blog/${post.slug}`} key={post.id}>
                   <strong>{post.title}</strong>
                   <span>{post.category}</span>

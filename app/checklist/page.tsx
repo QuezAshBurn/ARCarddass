@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
 import { ChecklistClient } from "@/components/ChecklistClient";
+import { getChecklistCards } from "@/lib/data/cards";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "AR Carddass Formation Checklist",
+  title: "AR Carddass Collection Checklist",
   description:
-    "Track owned and wanted One Piece AR Carddass Formation cards locally in your browser."
+    "Track owned and wanted One Piece AR Carddass King Rare, Wanted, and Film Z cards locally in your browser."
 };
 
 export default async function ChecklistPage() {
   const cards = await getCardsWithLivePrices();
-  const formationCards = cards.filter((card) => card.productLine === "Formation");
+  const checklistCards = getChecklistCards(cards);
 
   return (
     <section className="shell section">
@@ -22,7 +23,7 @@ export default async function ChecklistPage() {
         Your checklist is stored locally in this browser for now. The model is
         ready for account sync later without changing the catalogue.
       </p>
-      <ChecklistClient cards={formationCards} />
+      <ChecklistClient cards={checklistCards} />
     </section>
   );
 }

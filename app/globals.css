@@ -2075,6 +2075,36 @@ tr:last-child td {
     rgba(255, 255, 255, 0.045);
 }
 
+.blog-newsletter-card,
+.homepage-newsletter-card,
+.card-news-card {
+  border-color: rgba(255, 214, 111, 0.28);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 214, 111, 0.13), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.035));
+}
+
+.blog-newsletter-card,
+.homepage-newsletter-card {
+  display: grid;
+  gap: 0.8rem;
+  margin: 1.4rem 0;
+}
+
+.blog-newsletter-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  align-items: center;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-weight: 800;
+}
+
+.blog-newsletter-meta span {
+  color: var(--ar-cyan);
+}
+
 .blog-card small,
 .blog-featured small,
 .blog-meta {

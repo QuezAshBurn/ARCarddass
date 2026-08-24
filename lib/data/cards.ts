@@ -639,6 +639,24 @@ export function getCardsByProductLine(cardList: Card[], productLine?: ProductLin
   return cardList.filter((card) => card.productLine === productLine);
 }
 
+export function isFilmZCard(card: Card) {
+  return card.catalogueGroup === "Film Z";
+}
+
+export function isCoreKingRareCard(card: Card) {
+  return card.productLine === "Formation" && !isFilmZCard(card);
+}
+
+export function getCoreKingRareCards(cardList: Card[]) {
+  return cardList.filter(isCoreKingRareCard);
+}
+
+export function getChecklistCards(cardList: Card[]) {
+  return cardList.filter(
+    (card) => isCoreKingRareCard(card) || card.productLine === "Wanted" || isFilmZCard(card)
+  );
+}
+
 export function getProductLineSetLabel(productLine: ProductLine, setCode: string) {
   if (productLine === "Wanted") {
     return `Wanted ${setCode.replace(/^W/i, "")}`;

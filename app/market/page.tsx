@@ -1,7 +1,7 @@
 import { MarketAutomationStatus } from "@/components/MarketAutomationStatus";
 import { MarketTable } from "@/components/MarketTable";
 import { MarketWatchExplainer } from "@/components/MarketWatchExplainer";
-import { getCardsByProductLine, getMarketSummary, getProductLineBySlug, productLines } from "@/lib/data/cards";
+import { getCardsByProductLine, getCoreKingRareCards, getMarketSummary, getProductLineBySlug, productLines } from "@/lib/data/cards";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 import { ensureMarketPricesFresh } from "@/lib/server/market-price-cron";
 
@@ -55,7 +55,11 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   await ensureMarketPricesFresh();
   const cards = await getCardsWithLivePrices();
   const selectedLine = getProductLineBySlug(searchParams?.line);
-  const productLineCards = getCardsByProductLine(cards, selectedLine?.code ?? "Formation").filter(
+  const selectedLineCards =
+    (selectedLine?.code ?? "Formation") === "Formation"
+      ? getCoreKingRareCards(cards)
+      : getCardsByProductLine(cards, selectedLine?.code ?? "Formation");
+  const productLineCards = selectedLineCards.filter(
     (card) => card.versions[0]?.pricingState === "LIVE" || card.versions[0]?.pricingState === "FROZEN"
   );
   const rarityFilter = searchParams?.rarity?.toUpperCase();
@@ -85,10 +89,11 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
       <div className="series-switcher" aria-label="Market product line filters">
         <a className={`series-chip ${!selectedLine ? "active" : ""}`} href="/market">
           <span>Live market</span>
-          <strong>{getCardsByProductLine(cards, "Formation").filter((card) => card.versions[0]?.pricingState === "LIVE" || card.versions[0]?.pricingState === "FROZEN").length} tracked cards</strong>
+          <strong>{getCoreKingRareCards(cards).filter((card) => card.versions[0]?.pricingState === "LIVE" || card.versions[0]?.pricingState === "FROZEN").length} tracked cards</strong>
         </a>
         {productLines.map((line) => {
-          const lineCards = getCardsByProductLine(cards, line.code).filter(
+          const lineSourceCards = line.code === "Formation" ? getCoreKingRareCards(cards) : getCardsByProductLine(cards, line.code);
+          const lineCards = lineSourceCards.filter(
             (card) => card.versions[0]?.pricingState === "LIVE" || card.versions[0]?.pricingState === "FROZEN"
           );
 

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { SetGuide } from "@/components/SetGuide";
 import { getRelatedBlogPostsForSet } from "@/lib/data/blog";
-import { getProductLineSetLabel, getSetCode } from "@/lib/data/cards";
+import { getCardsByProductLine, getCoreKingRareCards, getProductLineSetLabel, getSetCode } from "@/lib/data/cards";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
 const setCodes = ["F01", "F02", "F03", "F04", "W01", "W02", "W03", "W04"] as const;
@@ -29,8 +29,9 @@ export default async function SetPage({ params }: SetPageProps) {
     notFound();
   }
 
-  const setCards = cards.filter((card) => getSetCode(card.cardNumber) === setCode);
   const productLine = setCode.startsWith("W") ? "Wanted" : "Formation";
+  const sourceCards = productLine === "Formation" ? getCoreKingRareCards(cards) : getCardsByProductLine(cards, "Wanted");
+  const setCards = sourceCards.filter((card) => getSetCode(card.cardNumber) === setCode);
   const setLabel = getProductLineSetLabel(productLine, setCode);
 
   return <SetGuide setCode={setCode} setName={setLabel} cards={setCards} relatedPosts={relatedPosts} />;

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CardFormation } from "@/components/cards/CardFormation";
-import { getCardsByProductLine, getProductLineSetLabel, getSetCode } from "@/lib/data/cards";
+import { getCardsByProductLine, getCoreKingRareCards, getProductLineSetLabel, getSetCode } from "@/lib/data/cards";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
 const formationSets = ["F01", "F02", "F03", "F04"] as const;
@@ -10,9 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SetsPage() {
   const cards = await getCardsWithLivePrices();
-  const formationCards = getCardsByProductLine(cards, "Formation").filter(
-    (card) => card.catalogueGroup !== "Film Z"
-  );
+  const formationCards = getCoreKingRareCards(cards);
   const wantedCards = getCardsByProductLine(cards, "Wanted");
   const filmZCards = cards.filter((card) => card.catalogueGroup === "Film Z");
 

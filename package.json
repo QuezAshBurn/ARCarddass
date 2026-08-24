@@ -12,7 +12,8 @@
                     "pricing:update:all":  "node scripts/market-pricing-all.mjs",
                     "market:collect": "node scripts/run-market-collection.mjs",
                     "blog:spotlight": "node scripts/blog-spotlight.mjs",
-                    "blog:weekly": "node scripts/blog-weekly.mjs"
+                    "blog:weekly": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/generate-market-newsletter.ts --days=7",
+                    "blog:newsletter": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/generate-market-newsletter.ts"
                 },
     "dependencies":  {
                          "@supabase/supabase-js":  "^2.45.4",

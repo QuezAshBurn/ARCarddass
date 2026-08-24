@@ -54,6 +54,11 @@ export default async function CataloguePage({ searchParams }: CataloguePageProps
         pricing, and market movement never mix between different AR Carddass lines.
       </p>
 
+      <form className="catalogue-search-inline" action="/search">
+        <input name="q" placeholder="Search card code, character, rarity, set, or article" />
+        <button className="button secondary" type="submit">Search</button>
+      </form>
+
       <div className="series-switcher" aria-label="Product line filters">
         <a className={`series-chip ${!selectedLine && !isFilmZ ? "active" : ""}`} href="/cards">
           <span>All</span>

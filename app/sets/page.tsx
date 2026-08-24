@@ -42,6 +42,7 @@ export default async function SetsPage() {
               <span className="label">{setCode}</span>
               <h2>{getProductLineSetLabel("Formation", setCode)}</h2>
               <p>{setCards.length} premium launch card{setCards.length === 1 ? "" : "s"} seeded.</p>
+              <span className="market-row-note">SEO guide: /cards/formation-{setCode.slice(1)}</span>
             </Link>
           );
         })}

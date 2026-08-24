@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { CardGrid } from "@/components/CardGrid";
+import { SetGuide } from "@/components/SetGuide";
+import { getRelatedBlogPostsForSet } from "@/lib/data/blog";
 import { getProductLineSetLabel, getSetCode } from "@/lib/data/cards";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 
@@ -18,7 +19,10 @@ export function generateStaticParams() {
 export const dynamic = "force-dynamic";
 
 export default async function SetPage({ params }: SetPageProps) {
-  const cards = await getCardsWithLivePrices();
+  const [cards, relatedPosts] = await Promise.all([
+    getCardsWithLivePrices(),
+    getRelatedBlogPostsForSet(params.setCode.toUpperCase())
+  ]);
   const setCode = params.setCode.toUpperCase();
 
   if (!setCodes.includes(setCode as (typeof setCodes)[number])) {
@@ -27,21 +31,7 @@ export default async function SetPage({ params }: SetPageProps) {
 
   const setCards = cards.filter((card) => getSetCode(card.cardNumber) === setCode);
   const productLine = setCode.startsWith("W") ? "Wanted" : "Formation";
-  const productLineLabel = productLine === "Wanted" ? "Wanted" : "King Rare";
   const setLabel = getProductLineSetLabel(productLine, setCode);
 
-  return (
-    <section className="shell section" data-set={setCode}>
-      <div className="content-card set-panel" data-set={setCode}>
-        <span className="label">{productLineLabel} set</span>
-        <h1>{setLabel}</h1>
-        <p>
-          This route is scoped to the {productLineLabel} product line, with its
-          own set codes, pricing evidence, demand, scarcity, and market movement.
-        </p>
-      </div>
-      <div style={{ height: 24 }} />
-      <CardGrid cards={setCards} />
-    </section>
-  );
+  return <SetGuide setCode={setCode} setName={setLabel} cards={setCards} relatedPosts={relatedPosts} />;
 }

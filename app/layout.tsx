@@ -14,12 +14,13 @@ export const metadata: Metadata = {
 const navItems = [
   { href: "/", label: "Home" },
   { href: "/cards", label: "Cards" },
-  { href: "/sets", label: "Sets" },
   { href: "/market", label: "Market" },
+  { href: "/blog", label: "Blog" },
+  { href: "/checklist", label: "Checklist" },
   { href: "/pull", label: "Open Pack" },
   { href: "/evidence", label: "Evidence" },
-  { href: "/methodology", label: "Methodology" },
-  { href: "/about", label: "About" }
+  { href: "/about", label: "About" },
+  { href: "/search", label: "Search" }
 ];
 
 export default function RootLayout({

@@ -6,6 +6,7 @@ import { PullExperience } from "@/components/pull/PullExperience";
 import { evidenceRecords, formatPeso, getMarketSummary, getPrimaryVersion } from "@/lib/data/cards";
 import { getCardsWithLivePrices } from "@/lib/data/live-cards";
 import { ensureMarketPricesFresh } from "@/lib/server/market-price-cron";
+import { getBlogPosts } from "@/lib/data/blog";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,7 +14,7 @@ export const fetchCache = "force-no-store";
 
 export default async function HomePage() {
   await ensureMarketPricesFresh();
-  const cards = await getCardsWithLivePrices();
+  const [cards, posts] = await Promise.all([getCardsWithLivePrices(), getBlogPosts()]);
   const featuredKingRareCards = cards.filter((card) => card.productLine === "Formation").slice(0, 8);
   const summary = getMarketSummary(cards);
   const highest = [...cards].sort(
@@ -21,6 +22,9 @@ export default async function HomePage() {
   )[0];
   const highestVersion = getPrimaryVersion(highest);
   const latestSale = evidenceRecords.find((record) => record.status === "sold");
+  const latestStory = posts.find((post) => post.category === "Market Analysis") ?? posts[0];
+  const latestDiscovery = posts.find((post) => post.category === "Discovery");
+  const collectorGuide = posts.find((post) => post.category === "Collector Guide");
 
   return (
     <>
@@ -82,6 +86,40 @@ export default async function HomePage() {
           </Link>
         </div>
         <CardFormation cards={featuredKingRareCards} />
+      </section>
+
+      <section className="shell section">
+        <div className="section-head">
+          <div>
+            <span className="label">Knowledge hub</span>
+            <h2>Learn the catalogue while tracking the market.</h2>
+          </div>
+          <Link className="button secondary" href="/blog">
+            Read the blog
+          </Link>
+        </div>
+        <div className="grid four knowledge-grid">
+          <Link className="content-card" href={latestStory ? `/blog/${latestStory.slug}` : "/blog"}>
+            <span className="label">Latest market story</span>
+            <h2>{latestStory?.title ?? "No published market story yet"}</h2>
+            <p>{latestStory?.excerpt ?? "Market stories appear only when the evidence ledger has a meaningful event."}</p>
+          </Link>
+          <Link className="content-card" href={latestDiscovery ? `/blog/${latestDiscovery.slug}` : "/blog?category=Discovery"}>
+            <span className="label">Latest discovery</span>
+            <h2>{latestDiscovery?.title ?? "Discovery drafts in review"}</h2>
+            <p>{latestDiscovery?.excerpt ?? "New variants and unusual print findings stay in review until evidence is attached."}</p>
+          </Link>
+          <Link className="content-card" href={collectorGuide ? `/blog/${collectorGuide.slug}` : "/blog?category=Collector%20Guide"}>
+            <span className="label">Collector guide</span>
+            <h2>{collectorGuide?.title ?? "Guides are being reviewed"}</h2>
+            <p>{collectorGuide?.excerpt ?? "Guides explain identification, rarity, versions, and pricing rules."}</p>
+          </Link>
+          <Link className="content-card" href="/cards/formation-01">
+            <span className="label">Browse Formation sets</span>
+            <h2>Formation 01-04</h2>
+            <p>Open set checklists, rarity breakdowns, premium cards, and related guide drafts.</p>
+          </Link>
+        </div>
       </section>
 
       <section className="shell section">
